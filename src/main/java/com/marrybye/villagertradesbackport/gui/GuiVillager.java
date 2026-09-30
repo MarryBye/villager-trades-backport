@@ -147,9 +147,6 @@ public class GuiVillager extends GuiMerchant {
             drawCustomTexturedRect(x + 136, y + 16, 0.0F, 191.0F, currentProgressWidth, 5, 512.0F, 256.0F, this.zLevel);
         }
 
-        // Draw border frame (u=0, v=181, w=102, h=5)
-        drawCustomTexturedRect(x + 136, y + 16, 0.0F, 181.0F, 102, 5, 512.0F, 256.0F, this.zLevel);
-
         // 3. Render big red cross over right-hand trade arrow if selected trade is disabled
         if (trades != null && !trades.isEmpty()) {
             if (this.selectedTradeIndex >= 0 && this.selectedTradeIndex < trades.size()) {

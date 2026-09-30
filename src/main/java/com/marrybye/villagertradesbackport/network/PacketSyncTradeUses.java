@@ -1,0 +1,76 @@
+package com.marrybye.villagertradesbackport.network;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.entity.IMerchant;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.village.MerchantRecipe;
+import net.minecraft.village.MerchantRecipeList;
+
+import com.marrybye.villagertradesbackport.container.ContainerVillager;
+import com.marrybye.villagertradesbackport.mixins.AccessorMerchantRecipe;
+
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
+
+public class PacketSyncTradeUses implements IMessage {
+
+    private int[] uses;
+
+    public PacketSyncTradeUses() {}
+
+    public PacketSyncTradeUses(int[] uses) {
+        this.uses = uses;
+    }
+
+    @Override
+    public void fromBytes(ByteBuf buf) {
+        int length = buf.readInt();
+        this.uses = new int[length];
+        for (int i = 0; i < length; ++i) {
+            this.uses[i] = buf.readInt();
+        }
+    }
+
+    @Override
+    public void toBytes(ByteBuf buf) {
+        if (this.uses == null) {
+            buf.writeInt(0);
+        } else {
+            buf.writeInt(this.uses.length);
+            for (int u : this.uses) {
+                buf.writeInt(u);
+            }
+        }
+    }
+
+    public static class Handler implements IMessageHandler<PacketSyncTradeUses, IMessage> {
+
+        @Override
+        @SideOnly(Side.CLIENT)
+        public IMessage onMessage(PacketSyncTradeUses message, MessageContext ctx) {
+            if (message.uses == null) {
+                return null;
+            }
+
+            EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+            if (player != null && player.openContainer instanceof ContainerVillager) {
+                ContainerVillager container = (ContainerVillager) player.openContainer;
+                IMerchant merchant = container.getMerchant();
+                if (merchant != null) {
+                    MerchantRecipeList recipes = merchant.getRecipes(player);
+                    if (recipes != null) {
+                        for (int i = 0; i < Math.min(recipes.size(), message.uses.length); ++i) {
+                            MerchantRecipe recipe = (MerchantRecipe) recipes.get(i);
+                            ((AccessorMerchantRecipe) recipe).setToolUses(message.uses[i]);
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+    }
+}

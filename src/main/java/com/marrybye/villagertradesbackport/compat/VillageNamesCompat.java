@@ -11,36 +11,27 @@ public class VillageNamesCompat {
     private static final boolean IS_VILLAGE_NAMES_LOADED = Loader.isModLoaded("VillageNames");
 
     public static int getVillagerLevel(IMerchant merchant, MerchantRecipeList trades) {
+        int level = 1;
+
+        if (trades != null && !trades.isEmpty()) {
+            int count = trades.size();
+            level = Math.max(1, Math.min(5, (count + 1) / 2));
+        }
+
+        // Keep VillageNames' profession level (which drives skin badge render) synchronized with actual trade level
         if (IS_VILLAGE_NAMES_LOADED && merchant instanceof EntityVillager) {
             try {
-                int vnLevel = getVillageNamesProfessionLevel((EntityVillager) merchant);
-                if (vnLevel >= 1 && vnLevel <= 5) {
-                    return vnLevel;
-                }
+                syncVillageNamesProfessionLevel((EntityVillager) merchant, level);
             } catch (Throwable ignored) {}
         }
 
-        // Fallback calculation based on trade count
-        if (trades != null && !trades.isEmpty()) {
-            int count = trades.size();
-            if (count <= 2) return 1;
-            if (count <= 4) return 2;
-            if (count <= 6) return 3;
-            if (count <= 8) return 4;
-            return 5;
-        }
-
-        return 1;
+        return level;
     }
 
-    private static int getVillageNamesProfessionLevel(EntityVillager villager) {
+    private static void syncVillageNamesProfessionLevel(EntityVillager villager, int level) {
         astrotibs.villagenames.ieep.ExtendedVillager ev = astrotibs.villagenames.ieep.ExtendedVillager.get(villager);
-        if (ev != null) {
-            int level = ev.getProfessionLevel();
-            if (level >= 1 && level <= 5) {
-                return level;
-            }
+        if (ev != null && ev.getProfessionLevel() != level) {
+            ev.setProfessionLevel(level);
         }
-        return astrotibs.villagenames.ieep.ExtendedVillager.determineProfessionLevel(villager);
     }
 }

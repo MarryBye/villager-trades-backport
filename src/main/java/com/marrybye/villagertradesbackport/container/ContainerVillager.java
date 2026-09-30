@@ -1,6 +1,8 @@
 package com.marrybye.villagertradesbackport.container;
 
 import net.minecraft.entity.IMerchant;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ContainerMerchant;
 import net.minecraft.inventory.InventoryMerchant;
@@ -11,11 +13,15 @@ import net.minecraft.village.MerchantRecipe;
 import net.minecraft.village.MerchantRecipeList;
 import net.minecraft.world.World;
 
+import com.marrybye.villagertradesbackport.mixins.AccessorMerchantRecipe;
+import com.marrybye.villagertradesbackport.network.ModNetwork;
+
 public class ContainerVillager extends ContainerMerchant {
 
     private final InventoryPlayer playerInv;
     private final IMerchant merchant;
     private final InventoryMerchant merchantInventory;
+    private int[] lastSentUses;
 
     public ContainerVillager(InventoryPlayer playerInv, IMerchant merchant, World world) {
         super(playerInv, merchant, world);
@@ -135,6 +141,47 @@ public class ContainerVillager extends ContainerMerchant {
 
                 if (newCount >= requiredStack.getMaxStackSize()) {
                     break;
+                }
+            }
+        }
+    }
+
+    @Override
+    public ItemStack slotClick(int slotId, int clickedButton, int mode, EntityPlayer player) {
+        if (slotId == 2) {
+            Slot slot = (Slot) this.inventorySlots.get(2);
+            if (slot != null && slot.getHasStack()) {
+                MerchantRecipe recipe = this.merchantInventory.getCurrentRecipe();
+                if (recipe != null) {
+                    ((AccessorMerchantRecipe) recipe).setToolUses(((AccessorMerchantRecipe) recipe).getToolUses() + 1);
+                }
+            }
+        }
+        return super.slotClick(slotId, clickedButton, mode, player);
+    }
+
+    @Override
+    public void detectAndSendChanges() {
+        super.detectAndSendChanges();
+
+        if (this.playerInv.player instanceof EntityPlayerMP) {
+            EntityPlayerMP playerMP = (EntityPlayerMP) this.playerInv.player;
+            MerchantRecipeList recipes = this.merchant.getRecipes(playerMP);
+            if (recipes != null) {
+                int size = recipes.size();
+                boolean needsSync = (this.lastSentUses == null || this.lastSentUses.length != size);
+                int[] currentUses = new int[size];
+                for (int i = 0; i < size; ++i) {
+                    MerchantRecipe r = (MerchantRecipe) recipes.get(i);
+                    currentUses[i] = ((AccessorMerchantRecipe) r).getToolUses();
+                    if (!needsSync && this.lastSentUses != null && this.lastSentUses[i] != currentUses[i]) {
+                        needsSync = true;
+                    }
+                }
+
+                if (needsSync) {
+                    this.lastSentUses = currentUses;
+                    ModNetwork.sendSyncTradeUses(playerMP, currentUses);
                 }
             }
         }

@@ -11,6 +11,12 @@ public interface AccessorMerchantRecipe {
     @Accessor("toolUses")
     int getToolUses();
 
+    @Accessor("toolUses")
+    void setToolUses(int toolUses);
+
     @Accessor("maxTradeUses")
     int getMaxTradeUses();
+
+    @Accessor("maxTradeUses")
+    void setMaxTradeUses(int maxTradeUses);
 }
