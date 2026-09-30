@@ -4,3 +4,6 @@ container.villagertrades.apprentice=Apprentice
 container.villagertrades.journeyman=Journeyman
 container.villagertrades.expert=Expert
 container.villagertrades.master=Master
+container.villagertrades.max_level=Max Level
+container.villagertrades.trades_count=trades to level up
+container.villagertrades.villager_xp=Villager Experience

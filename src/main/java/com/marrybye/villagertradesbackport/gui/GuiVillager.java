@@ -1,5 +1,8 @@
 package com.marrybye.villagertradesbackport.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiMerchant;
@@ -7,6 +10,7 @@ import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.IMerchant;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StatCollector;
@@ -19,6 +23,7 @@ import org.lwjgl.opengl.GL12;
 
 import com.marrybye.villagertradesbackport.compat.VillageNamesCompat;
 import com.marrybye.villagertradesbackport.container.ContainerVillager;
+import com.marrybye.villagertradesbackport.mixins.AccessorMerchantRecipe;
 import com.marrybye.villagertradesbackport.network.ModNetwork;
 
 public class GuiVillager extends GuiMerchant {
@@ -81,9 +86,10 @@ public class GuiVillager extends GuiMerchant {
         }
 
         String fullTitle = displayName + " - " + levelName;
-        int j = this.fontRendererObj.getStringWidth(fullTitle);
-        int k = 49 + (this.xSize / 2) - (j / 2);
-        this.fontRendererObj.drawString(fullTitle, k, 6, 0x404040);
+        int titleWidth = this.fontRendererObj.getStringWidth(fullTitle);
+        // Center above XP bar (XP bar is at x=136 with width=102, center=187)
+        int titleX = Math.max(105, 136 + (102 - titleWidth) / 2);
+        this.fontRendererObj.drawString(fullTitle, titleX, 6, 0x404040);
 
         // Player Inventory title
         String invName = this.container.getPlayerInv()
@@ -98,7 +104,7 @@ public class GuiVillager extends GuiMerchant {
         // Trades panel title
         String tradesLabel = StatCollector.translateToLocal("container.villagertrades.trades");
         int l = this.fontRendererObj.getStringWidth(tradesLabel);
-        this.fontRendererObj.drawString(tradesLabel, 5 + 48 - (l / 2), 6, 0x404040);
+        this.fontRendererObj.drawString(tradesLabel, 5 + (89 - l) / 2, 6, 0x404040);
     }
 
     @Override
@@ -109,18 +115,46 @@ public class GuiVillager extends GuiMerchant {
         int x = this.guiLeft;
         int y = this.guiTop;
 
-        // Render main 276x166 GUI background
+        // 1. Render main 276x166 GUI background
         drawCustomTexturedRect(x, y, 0.0F, 0.0F, this.xSize, this.ySize, 512.0F, 256.0F, this.zLevel);
 
         MerchantRecipeList trades = this.theMerchant.getRecipes(this.mc.thePlayer);
+
+        // 2. Render Villager Experience Progress Bar (1.14+ style)
+        int level = VillageNamesCompat.getVillagerLevel(this.theMerchant, trades);
+        int currentProgressWidth = 0;
+
+        if (level >= 5) {
+            currentProgressWidth = 102;
+        } else if (trades != null && !trades.isEmpty()) {
+            int startIndex = Math.max(0, (level - 1) * 2);
+            int endIndex = Math.min(trades.size(), startIndex + 2);
+            int currentLevelUses = 0;
+            for (int i = startIndex; i < endIndex; ++i) {
+                MerchantRecipe r = (MerchantRecipe) trades.get(i);
+                currentLevelUses += ((AccessorMerchantRecipe) r).getToolUses();
+            }
+            int targetUses = Math.max(2, level + 1);
+            float ratio = Math.min(1.0F, (float) currentLevelUses / (float) targetUses);
+            currentProgressWidth = (int) (ratio * 102.0F);
+        }
+
+        // Draw empty background bar (u=0, v=186, w=102, h=5)
+        drawCustomTexturedRect(x + 136, y + 16, 0.0F, 186.0F, 102, 5, 512.0F, 256.0F, this.zLevel);
+
+        // Draw green progress fill (u=0, v=191, w=progressWidth, h=5)
+        if (currentProgressWidth > 0) {
+            drawCustomTexturedRect(x + 136, y + 16, 0.0F, 191.0F, currentProgressWidth, 5, 512.0F, 256.0F, this.zLevel);
+        }
+
+        // Draw border frame (u=0, v=181, w=102, h=5)
+        drawCustomTexturedRect(x + 136, y + 16, 0.0F, 181.0F, 102, 5, 512.0F, 256.0F, this.zLevel);
+
+        // 3. Render big red cross over right-hand trade arrow if selected trade is disabled
         if (trades != null && !trades.isEmpty()) {
             if (this.selectedTradeIndex >= 0 && this.selectedTradeIndex < trades.size()) {
                 MerchantRecipe trade = (MerchantRecipe) trades.get(this.selectedTradeIndex);
                 if (trade.isRecipeDisabled()) {
-                    this.mc.getTextureManager()
-                        .bindTexture(TEXTURE);
-                    GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-                    // Big red cross over right-hand trade arrow
                     drawCustomTexturedRect(
                         this.guiLeft + 182,
                         this.guiTop + 35,
@@ -138,10 +172,18 @@ public class GuiVillager extends GuiMerchant {
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        MerchantRecipeList trades = this.theMerchant.getRecipes(this.mc.thePlayer);
+        if (trades != null) {
+            for (TradeButton btn : this.tradeButtons) {
+                if (btn != null) {
+                    btn.visible = (btn.id + this.scrollOffset) < trades.size();
+                }
+            }
+        }
+
         super.drawScreen(mouseX, mouseY, partialTicks);
 
         // Draw left panel trades list
-        MerchantRecipeList trades = this.theMerchant.getRecipes(this.mc.thePlayer);
         if (trades != null && !trades.isEmpty()) {
             int startX = this.guiLeft;
             int startY = this.guiTop;
@@ -195,14 +237,11 @@ public class GuiVillager extends GuiMerchant {
                 }
             }
 
-            // Update button visibility and check trade button tooltips
+            // Check trade button tooltips
             TradeButton hoveredTradeButton = null;
             for (TradeButton btn : this.tradeButtons) {
-                if (btn != null) {
-                    btn.visible = (btn.id + this.scrollOffset) < trades.size();
-                    if (btn.visible && btn.func_146115_a()) {
-                        hoveredTradeButton = btn;
-                    }
+                if (btn != null && btn.visible && btn.func_146115_a()) {
+                    hoveredTradeButton = btn;
                 }
             }
 
@@ -216,6 +255,42 @@ public class GuiVillager extends GuiMerchant {
                 hoveredTradeButton.renderToolTip(mouseX, mouseY, trades);
             }
         }
+
+        // Render XP bar tooltip on hover
+        if (mouseX >= this.guiLeft + 136 && mouseX <= this.guiLeft + 136 + 102
+            && mouseY >= this.guiTop + 16
+            && mouseY <= this.guiTop + 16 + 5) {
+            this.renderXpTooltip(mouseX, mouseY, trades);
+        }
+    }
+
+    private void renderXpTooltip(int mouseX, int mouseY, MerchantRecipeList trades) {
+        int level = VillageNamesCompat.getVillagerLevel(this.theMerchant, trades);
+        List<String> text = new ArrayList<String>();
+        String title = EnumChatFormatting.GREEN
+            + StatCollector.translateToLocal("container.villagertrades.villager_xp");
+        text.add(title);
+
+        if (level >= 5) {
+            text.add(EnumChatFormatting.GRAY + StatCollector.translateToLocal("container.villagertrades.max_level"));
+        } else if (trades != null && !trades.isEmpty()) {
+            int startIndex = Math.max(0, (level - 1) * 2);
+            int endIndex = Math.min(trades.size(), startIndex + 2);
+            int currentLevelUses = 0;
+            for (int i = startIndex; i < endIndex; ++i) {
+                MerchantRecipe r = (MerchantRecipe) trades.get(i);
+                currentLevelUses += ((AccessorMerchantRecipe) r).getToolUses();
+            }
+            int targetUses = Math.max(2, level + 1);
+            text.add(
+                EnumChatFormatting.GRAY.toString() + currentLevelUses
+                    + " / "
+                    + targetUses
+                    + " "
+                    + StatCollector.translateToLocal("container.villagertrades.trades_count"));
+        }
+
+        this.drawHoveringText(text, mouseX, mouseY, this.fontRendererObj);
     }
 
     private void renderScrollBar(int x, int y, MerchantRecipeList trades) {
@@ -338,45 +413,30 @@ public class GuiVillager extends GuiMerchant {
     public class TradeButton extends GuiButton {
 
         public TradeButton(int id, int x, int y) {
-            super(id, x, y, 88, 20, "");
+            super(id, x, y, 89, 20, "");
             this.visible = false;
         }
 
         @Override
         public void drawButton(Minecraft mc, int mouseX, int mouseY) {
             if (this.visible) {
-                this.field_146123_n = mouseX >= this.xPosition && mouseY >= this.yPosition
-                    && mouseX < this.xPosition + this.width
-                    && mouseY < this.yPosition + this.height;
+                super.drawButton(mc, mouseX, mouseY);
 
                 int tradeIndex = this.id + scrollOffset;
                 boolean isSelected = (tradeIndex == selectedTradeIndex);
 
-                mc.getTextureManager()
-                    .bindTexture(TEXTURE);
-                GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-
                 if (isSelected) {
-                    // Selected trade frame from villager.png
-                    drawCustomTexturedRect(
-                        this.xPosition,
-                        this.yPosition,
-                        279.0F,
-                        73.0F,
-                        88,
-                        20,
-                        512.0F,
-                        256.0F,
-                        zLevel);
-                } else if (this.field_146123_n) {
-                    // Hover highlight
-                    drawGradientRect(
-                        this.xPosition,
-                        this.yPosition,
-                        this.xPosition + this.width,
-                        this.yPosition + this.height,
-                        0x40FFFFFF,
-                        0x40FFFFFF);
+                    // Draw a crisp 1px white highlight border around the selected button
+                    int x1 = this.xPosition;
+                    int y1 = this.yPosition;
+                    int x2 = this.xPosition + this.width;
+                    int y2 = this.yPosition + this.height;
+                    int color = 0xFFFFFFFF;
+
+                    drawRect(x1, y1, x2, y1 + 1, color);
+                    drawRect(x1, y2 - 1, x2, y2, color);
+                    drawRect(x1, y1 + 1, x1 + 1, y2 - 1, color);
+                    drawRect(x2 - 1, y1 + 1, x2, y2 - 1, color);
                 }
             }
         }
