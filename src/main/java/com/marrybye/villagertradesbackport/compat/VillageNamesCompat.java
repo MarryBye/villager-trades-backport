@@ -11,8 +11,28 @@ public class VillageNamesCompat {
     private static final boolean IS_VILLAGE_NAMES_LOADED = Loader.isModLoaded("VillageNames");
 
     public static int getVillagerLevel(IMerchant merchant, MerchantRecipeList trades) {
-        int level = 1;
+        if (merchant instanceof EntityVillager) {
+            EntityVillager villager = (EntityVillager) merchant;
+            if (villager.getEntityData()
+                .hasKey("VTB_Level")) {
+                int saved = villager.getEntityData()
+                    .getInteger("VTB_Level");
+                if (saved >= 1 && saved <= 5) {
+                    return saved;
+                }
+            }
+            if (IS_VILLAGE_NAMES_LOADED) {
+                try {
+                    int vnLevel = getVillageNamesProfessionLevel(villager);
+                    if (vnLevel >= 1 && vnLevel <= 5) {
+                        return vnLevel;
+                    }
+                } catch (Throwable ignored) {}
+            }
+        }
 
+        // Fallback calculation for initial level
+        int level = 1;
         if (trades != null && !trades.isEmpty()) {
             int count = trades.size();
             if (count <= 2) {
@@ -28,14 +48,26 @@ public class VillageNamesCompat {
             }
         }
 
-        // Keep VillageNames' profession level (which drives skin badge render) synchronized with actual trade level
-        if (IS_VILLAGE_NAMES_LOADED && merchant instanceof EntityVillager) {
-            try {
-                syncVillageNamesProfessionLevel((EntityVillager) merchant, level);
-            } catch (Throwable ignored) {}
+        if (merchant instanceof EntityVillager) {
+            syncVillagerLevel((EntityVillager) merchant, level);
         }
 
         return level;
+    }
+
+    public static void syncVillagerLevel(EntityVillager villager, int level) {
+        villager.getEntityData()
+            .setInteger("VTB_Level", level);
+        if (IS_VILLAGE_NAMES_LOADED) {
+            try {
+                syncVillageNamesProfessionLevel(villager, level);
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    private static int getVillageNamesProfessionLevel(EntityVillager villager) {
+        astrotibs.villagenames.ieep.ExtendedVillager ev = astrotibs.villagenames.ieep.ExtendedVillager.get(villager);
+        return ev != null ? ev.getProfessionLevel() : -1;
     }
 
     private static void syncVillageNamesProfessionLevel(EntityVillager villager, int level) {

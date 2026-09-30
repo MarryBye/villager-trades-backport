@@ -21,7 +21,7 @@ public class ModNetwork {
         INSTANCE.sendToServer(new PacketSelectTrade(tradeIndex));
     }
 
-    public static void sendSyncTradeUses(EntityPlayerMP player, int[] uses) {
-        INSTANCE.sendTo(new PacketSyncTradeUses(uses), player);
+    public static void sendSyncTradeUses(EntityPlayerMP player, int level, int[] uses) {
+        INSTANCE.sendTo(new PacketSyncTradeUses(level, uses), player);
     }
 }

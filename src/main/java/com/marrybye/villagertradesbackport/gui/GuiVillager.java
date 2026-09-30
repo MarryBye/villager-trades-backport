@@ -21,7 +21,6 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
-import com.marrybye.villagertradesbackport.compat.VillageNamesCompat;
 import com.marrybye.villagertradesbackport.container.ContainerVillager;
 import com.marrybye.villagertradesbackport.mixins.AccessorMerchantRecipe;
 import com.marrybye.villagertradesbackport.network.ModNetwork;
@@ -76,7 +75,7 @@ public class GuiVillager extends GuiMerchant {
     @Override
     protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
         MerchantRecipeList trades = this.theMerchant.getRecipes(this.mc.thePlayer);
-        int level = VillageNamesCompat.getVillagerLevel(this.theMerchant, trades);
+        int level = this.container.getVillagerLevel();
         String levelName = StatCollector.translateToLocal(LEVEL_KEYS[Math.max(0, Math.min(4, level - 1))]);
 
         String displayName = this.titleText;
@@ -121,24 +120,22 @@ public class GuiVillager extends GuiMerchant {
         MerchantRecipeList trades = this.theMerchant.getRecipes(this.mc.thePlayer);
 
         // 2. Render Villager Experience Progress Bar (authentic vanilla player XP bar from Gui.icons)
-        int level = VillageNamesCompat.getVillagerLevel(this.theMerchant, trades);
+        int level = this.container.getVillagerLevel();
         int currentProgressWidth = 0;
 
         if (level >= 5) {
             currentProgressWidth = 102;
         } else if (trades != null && !trades.isEmpty()) {
             int currentUses = 0;
-            int targetUses = 3;
+            int targetUses = Math.max(3, level + 1);
             if (level == 1) {
                 for (int i = 0; i < Math.min(2, trades.size()); ++i) {
                     MerchantRecipe r = (MerchantRecipe) trades.get(i);
                     currentUses += ((AccessorMerchantRecipe) r).getToolUses();
                 }
-                targetUses = 3;
             } else {
                 MerchantRecipe r = (MerchantRecipe) trades.get(trades.size() - 1);
                 currentUses = ((AccessorMerchantRecipe) r).getToolUses();
-                targetUses = Math.max(3, level + 1);
             }
             float ratio = Math.min(1.0F, (float) currentUses / (float) targetUses);
             currentProgressWidth = (int) (ratio * 102.0F);
@@ -147,11 +144,19 @@ public class GuiVillager extends GuiMerchant {
         // Bind icons.png (authentic vanilla player XP bar texture)
         this.mc.getTextureManager()
             .bindTexture(icons);
-        // Draw empty background bar (u=0, v=64, w=102, h=5)
-        this.drawTexturedModalRect(x + 136, y + 16, 0, 64, 102, 5);
-        // Draw green progress fill (u=0, v=69, w=currentProgressWidth, h=5)
+        // Draw empty background bar (width = 102, height = 5)
+        // Draw left 100 pixels from u=0, and right 2 pixels from u=180 so both ends are rounded
+        this.drawTexturedModalRect(x + 136, y + 16, 0, 64, 100, 5);
+        this.drawTexturedModalRect(x + 136 + 100, y + 16, 180, 64, 2, 5);
+
+        // Draw green progress fill (height = 5)
         if (currentProgressWidth > 0) {
-            this.drawTexturedModalRect(x + 136, y + 16, 0, 69, currentProgressWidth, 5);
+            if (currentProgressWidth >= 102) {
+                this.drawTexturedModalRect(x + 136, y + 16, 0, 69, 100, 5);
+                this.drawTexturedModalRect(x + 136 + 100, y + 16, 180, 69, 2, 5);
+            } else {
+                this.drawTexturedModalRect(x + 136, y + 16, 0, 69, currentProgressWidth, 5);
+            }
         }
         // Restore villager GUI texture
         this.mc.getTextureManager()
@@ -272,7 +277,7 @@ public class GuiVillager extends GuiMerchant {
     }
 
     private void renderXpTooltip(int mouseX, int mouseY, MerchantRecipeList trades) {
-        int level = VillageNamesCompat.getVillagerLevel(this.theMerchant, trades);
+        int level = this.container.getVillagerLevel();
         List<String> text = new ArrayList<String>();
         String title = EnumChatFormatting.GREEN
             + StatCollector.translateToLocal("container.villagertrades.villager_xp");
@@ -282,17 +287,15 @@ public class GuiVillager extends GuiMerchant {
             text.add(EnumChatFormatting.GRAY + StatCollector.translateToLocal("container.villagertrades.max_level"));
         } else if (trades != null && !trades.isEmpty()) {
             int currentUses = 0;
-            int targetUses = 3;
+            int targetUses = Math.max(3, level + 1);
             if (level == 1) {
                 for (int i = 0; i < Math.min(2, trades.size()); ++i) {
                     MerchantRecipe r = (MerchantRecipe) trades.get(i);
                     currentUses += ((AccessorMerchantRecipe) r).getToolUses();
                 }
-                targetUses = 3;
             } else {
                 MerchantRecipe r = (MerchantRecipe) trades.get(trades.size() - 1);
                 currentUses = ((AccessorMerchantRecipe) r).getToolUses();
-                targetUses = Math.max(3, level + 1);
             }
             text.add(
                 EnumChatFormatting.GRAY.toString() + currentUses

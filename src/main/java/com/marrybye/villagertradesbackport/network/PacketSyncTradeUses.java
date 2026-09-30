@@ -18,16 +18,19 @@ import io.netty.buffer.ByteBuf;
 
 public class PacketSyncTradeUses implements IMessage {
 
+    private int level;
     private int[] uses;
 
     public PacketSyncTradeUses() {}
 
-    public PacketSyncTradeUses(int[] uses) {
+    public PacketSyncTradeUses(int level, int[] uses) {
+        this.level = level;
         this.uses = uses;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
+        this.level = buf.readInt();
         int length = buf.readInt();
         this.uses = new int[length];
         for (int i = 0; i < length; ++i) {
@@ -37,6 +40,7 @@ public class PacketSyncTradeUses implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
+        buf.writeInt(this.level);
         if (this.uses == null) {
             buf.writeInt(0);
         } else {
@@ -52,20 +56,20 @@ public class PacketSyncTradeUses implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketSyncTradeUses message, MessageContext ctx) {
-            if (message.uses == null) {
-                return null;
-            }
-
             EntityPlayer player = Minecraft.getMinecraft().thePlayer;
             if (player != null && player.openContainer instanceof ContainerVillager) {
                 ContainerVillager container = (ContainerVillager) player.openContainer;
-                IMerchant merchant = container.getMerchant();
-                if (merchant != null) {
-                    MerchantRecipeList recipes = merchant.getRecipes(player);
-                    if (recipes != null) {
-                        for (int i = 0; i < Math.min(recipes.size(), message.uses.length); ++i) {
-                            MerchantRecipe recipe = (MerchantRecipe) recipes.get(i);
-                            ((AccessorMerchantRecipe) recipe).setToolUses(message.uses[i]);
+                container.setVillagerLevel(message.level);
+
+                if (message.uses != null) {
+                    IMerchant merchant = container.getMerchant();
+                    if (merchant != null) {
+                        MerchantRecipeList recipes = merchant.getRecipes(player);
+                        if (recipes != null) {
+                            for (int i = 0; i < Math.min(recipes.size(), message.uses.length); ++i) {
+                                MerchantRecipe recipe = (MerchantRecipe) recipes.get(i);
+                                ((AccessorMerchantRecipe) recipe).setToolUses(message.uses[i]);
+                            }
                         }
                     }
                 }

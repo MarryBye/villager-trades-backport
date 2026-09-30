@@ -1,6 +1,7 @@
 package com.marrybye.villagertradesbackport.container;
 
 import net.minecraft.entity.IMerchant;
+import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -15,6 +16,8 @@ import net.minecraft.village.MerchantRecipe;
 import net.minecraft.village.MerchantRecipeList;
 import net.minecraft.world.World;
 
+import com.marrybye.villagertradesbackport.compat.VillageNamesCompat;
+import com.marrybye.villagertradesbackport.mixins.AccessorEntityVillager;
 import com.marrybye.villagertradesbackport.mixins.AccessorMerchantRecipe;
 import com.marrybye.villagertradesbackport.network.ModNetwork;
 
@@ -26,12 +29,14 @@ public class ContainerVillager extends ContainerMerchant {
     private final IMerchant merchant;
     private final InventoryMerchant merchantInventory;
     private int[] lastSentUses;
+    private int villagerLevel = 1;
 
     public ContainerVillager(InventoryPlayer playerInv, IMerchant merchant, World world) {
         super(playerInv, merchant, world);
         this.playerInv = playerInv;
         this.merchant = merchant;
         this.merchantInventory = this.getMerchantInventory();
+        this.villagerLevel = VillageNamesCompat.getVillagerLevel(merchant, merchant.getRecipes(playerInv.player));
 
         // Clear default 176px slot layout from vanilla ContainerMerchant
         this.inventorySlots.clear();
@@ -65,6 +70,14 @@ public class ContainerVillager extends ContainerMerchant {
 
     public InventoryPlayer getPlayerInv() {
         return this.playerInv;
+    }
+
+    public int getVillagerLevel() {
+        return this.villagerLevel;
+    }
+
+    public void setVillagerLevel(int villagerLevel) {
+        this.villagerLevel = villagerLevel;
     }
 
     /**
@@ -152,15 +165,6 @@ public class ContainerVillager extends ContainerMerchant {
 
     @Override
     public ItemStack slotClick(int slotId, int clickedButton, int mode, EntityPlayer player) {
-        if (slotId == 2) {
-            Slot slot = (Slot) this.inventorySlots.get(2);
-            if (slot != null && slot.getHasStack()) {
-                MerchantRecipe recipe = this.merchantInventory.getCurrentRecipe();
-                if (recipe != null) {
-                    ((AccessorMerchantRecipe) recipe).setToolUses(((AccessorMerchantRecipe) recipe).getToolUses() + 1);
-                }
-            }
-        }
         return super.slotClick(slotId, clickedButton, mode, player);
     }
 
@@ -184,6 +188,49 @@ public class ContainerVillager extends ContainerMerchant {
                     }
                 }
 
+                if (this.merchant instanceof EntityVillager) {
+                    EntityVillager villager = (EntityVillager) this.merchant;
+                    AccessorEntityVillager acc = (AccessorEntityVillager) villager;
+
+                    if (this.villagerLevel <= 0) {
+                        this.villagerLevel = VillageNamesCompat.getVillagerLevel(villager, recipes);
+                    }
+
+                    // If new trades unlocked on the server, advance level and sync
+                    if (sizeChanged && this.lastSentUses != null && size > this.lastSentUses.length) {
+                        this.villagerLevel = Math.min(5, this.villagerLevel + 1);
+                        VillageNamesCompat.syncVillagerLevel(villager, this.villagerLevel);
+                        needsSync = true;
+                    }
+
+                    // Accelerate reset: if villager is resetting, complete in 5 ticks (0.25s) instead of 40 ticks
+                    if (acc.getNeedsInitilization() && acc.getTimeUntilReset() > 5) {
+                        acc.setTimeUntilReset(5);
+                    }
+
+                    // Check if current tier trade reached target uses to trigger level up
+                    if (this.villagerLevel < 5 && !acc.getNeedsInitilization()) {
+                        int levelUses = 0;
+                        int targetUses = Math.max(3, this.villagerLevel + 1);
+                        if (this.villagerLevel == 1) {
+                            for (int i = 0; i < Math.min(2, size); ++i) {
+                                levelUses += currentUses[i];
+                            }
+                        } else {
+                            levelUses = currentUses[size - 1];
+                        }
+                        if (levelUses >= targetUses) {
+                            acc.setNeedsInitilization(true);
+                            acc.setTimeUntilReset(5);
+                        }
+                    }
+                } else {
+                    if (sizeChanged && this.lastSentUses != null && size > this.lastSentUses.length) {
+                        this.villagerLevel = Math.min(5, this.villagerLevel + 1);
+                        needsSync = true;
+                    }
+                }
+
                 if (sizeChanged) {
                     try {
                         PacketBuffer packetbuffer = new PacketBuffer(Unpooled.buffer());
@@ -196,7 +243,7 @@ public class ContainerVillager extends ContainerMerchant {
 
                 if (needsSync) {
                     this.lastSentUses = currentUses;
-                    ModNetwork.sendSyncTradeUses(playerMP, currentUses);
+                    ModNetwork.sendSyncTradeUses(playerMP, this.villagerLevel, currentUses);
                 }
             }
         }
