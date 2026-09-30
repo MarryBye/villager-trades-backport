@@ -25,4 +25,11 @@ public abstract class MixinGuiMerchant extends GuiContainer {
             ci.cancel();
         }
     }
+
+    @Inject(method = "updateScreen", at = @At("HEAD"), cancellable = true)
+    private void villagertrades$onUpdateScreen(CallbackInfo ci) {
+        if ((Object) this instanceof GuiVillager) {
+            ci.cancel();
+        }
+    }
 }

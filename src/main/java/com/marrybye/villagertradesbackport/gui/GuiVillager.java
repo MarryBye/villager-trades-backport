@@ -314,7 +314,6 @@ public class GuiVillager extends GuiMerchant {
 
     @Override
     public void updateScreen() {
-        super.updateScreen();
         if (!this.mc.thePlayer.isEntityAlive() || this.mc.thePlayer.isDead) {
             this.mc.thePlayer.closeScreen();
         }
