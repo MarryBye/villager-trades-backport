@@ -120,32 +120,42 @@ public class GuiVillager extends GuiMerchant {
 
         MerchantRecipeList trades = this.theMerchant.getRecipes(this.mc.thePlayer);
 
-        // 2. Render Villager Experience Progress Bar (1.14+ style)
+        // 2. Render Villager Experience Progress Bar (authentic vanilla player XP bar from Gui.icons)
         int level = VillageNamesCompat.getVillagerLevel(this.theMerchant, trades);
         int currentProgressWidth = 0;
 
         if (level >= 5) {
             currentProgressWidth = 102;
         } else if (trades != null && !trades.isEmpty()) {
-            int startIndex = Math.max(0, (level - 1) * 2);
-            int endIndex = Math.min(trades.size(), startIndex + 2);
-            int currentLevelUses = 0;
-            for (int i = startIndex; i < endIndex; ++i) {
-                MerchantRecipe r = (MerchantRecipe) trades.get(i);
-                currentLevelUses += ((AccessorMerchantRecipe) r).getToolUses();
+            int currentUses = 0;
+            int targetUses = 3;
+            if (level == 1) {
+                for (int i = 0; i < Math.min(2, trades.size()); ++i) {
+                    MerchantRecipe r = (MerchantRecipe) trades.get(i);
+                    currentUses += ((AccessorMerchantRecipe) r).getToolUses();
+                }
+                targetUses = 3;
+            } else {
+                MerchantRecipe r = (MerchantRecipe) trades.get(trades.size() - 1);
+                currentUses = ((AccessorMerchantRecipe) r).getToolUses();
+                targetUses = Math.max(3, level + 1);
             }
-            int targetUses = Math.max(2, level + 1);
-            float ratio = Math.min(1.0F, (float) currentLevelUses / (float) targetUses);
+            float ratio = Math.min(1.0F, (float) currentUses / (float) targetUses);
             currentProgressWidth = (int) (ratio * 102.0F);
         }
 
-        // Draw empty background bar (u=0, v=186, w=102, h=5)
-        drawCustomTexturedRect(x + 136, y + 16, 0.0F, 186.0F, 102, 5, 512.0F, 256.0F, this.zLevel);
-
-        // Draw green progress fill (u=0, v=191, w=progressWidth, h=5)
+        // Bind icons.png (authentic vanilla player XP bar texture)
+        this.mc.getTextureManager()
+            .bindTexture(icons);
+        // Draw empty background bar (u=0, v=64, w=102, h=5)
+        this.drawTexturedModalRect(x + 136, y + 16, 0, 64, 102, 5);
+        // Draw green progress fill (u=0, v=69, w=currentProgressWidth, h=5)
         if (currentProgressWidth > 0) {
-            drawCustomTexturedRect(x + 136, y + 16, 0.0F, 191.0F, currentProgressWidth, 5, 512.0F, 256.0F, this.zLevel);
+            this.drawTexturedModalRect(x + 136, y + 16, 0, 69, currentProgressWidth, 5);
         }
+        // Restore villager GUI texture
+        this.mc.getTextureManager()
+            .bindTexture(TEXTURE);
 
         // 3. Render big red cross over right-hand trade arrow if selected trade is disabled
         if (trades != null && !trades.isEmpty()) {
@@ -271,16 +281,21 @@ public class GuiVillager extends GuiMerchant {
         if (level >= 5) {
             text.add(EnumChatFormatting.GRAY + StatCollector.translateToLocal("container.villagertrades.max_level"));
         } else if (trades != null && !trades.isEmpty()) {
-            int startIndex = Math.max(0, (level - 1) * 2);
-            int endIndex = Math.min(trades.size(), startIndex + 2);
-            int currentLevelUses = 0;
-            for (int i = startIndex; i < endIndex; ++i) {
-                MerchantRecipe r = (MerchantRecipe) trades.get(i);
-                currentLevelUses += ((AccessorMerchantRecipe) r).getToolUses();
+            int currentUses = 0;
+            int targetUses = 3;
+            if (level == 1) {
+                for (int i = 0; i < Math.min(2, trades.size()); ++i) {
+                    MerchantRecipe r = (MerchantRecipe) trades.get(i);
+                    currentUses += ((AccessorMerchantRecipe) r).getToolUses();
+                }
+                targetUses = 3;
+            } else {
+                MerchantRecipe r = (MerchantRecipe) trades.get(trades.size() - 1);
+                currentUses = ((AccessorMerchantRecipe) r).getToolUses();
+                targetUses = Math.max(3, level + 1);
             }
-            int targetUses = Math.max(2, level + 1);
             text.add(
-                EnumChatFormatting.GRAY.toString() + currentLevelUses
+                EnumChatFormatting.GRAY.toString() + currentUses
                     + " / "
                     + targetUses
                     + " "

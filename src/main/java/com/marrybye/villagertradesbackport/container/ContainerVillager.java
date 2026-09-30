@@ -9,12 +9,16 @@ import net.minecraft.inventory.InventoryMerchant;
 import net.minecraft.inventory.Slot;
 import net.minecraft.inventory.SlotMerchantResult;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.play.server.S3FPacketCustomPayload;
 import net.minecraft.village.MerchantRecipe;
 import net.minecraft.village.MerchantRecipeList;
 import net.minecraft.world.World;
 
 import com.marrybye.villagertradesbackport.mixins.AccessorMerchantRecipe;
 import com.marrybye.villagertradesbackport.network.ModNetwork;
+
+import io.netty.buffer.Unpooled;
 
 public class ContainerVillager extends ContainerMerchant {
 
@@ -169,7 +173,8 @@ public class ContainerVillager extends ContainerMerchant {
             MerchantRecipeList recipes = this.merchant.getRecipes(playerMP);
             if (recipes != null) {
                 int size = recipes.size();
-                boolean needsSync = (this.lastSentUses == null || this.lastSentUses.length != size);
+                boolean sizeChanged = (this.lastSentUses == null || this.lastSentUses.length != size);
+                boolean needsSync = sizeChanged;
                 int[] currentUses = new int[size];
                 for (int i = 0; i < size; ++i) {
                     MerchantRecipe r = (MerchantRecipe) recipes.get(i);
@@ -177,6 +182,16 @@ public class ContainerVillager extends ContainerMerchant {
                     if (!needsSync && this.lastSentUses != null && this.lastSentUses[i] != currentUses[i]) {
                         needsSync = true;
                     }
+                }
+
+                if (sizeChanged) {
+                    try {
+                        PacketBuffer packetbuffer = new PacketBuffer(Unpooled.buffer());
+                        packetbuffer.writeInt(this.windowId);
+                        recipes.func_151391_a(packetbuffer);
+                        playerMP.playerNetServerHandler
+                            .sendPacket(new S3FPacketCustomPayload("MC|TrList", packetbuffer));
+                    } catch (Exception ignored) {}
                 }
 
                 if (needsSync) {

@@ -15,7 +15,17 @@ public class VillageNamesCompat {
 
         if (trades != null && !trades.isEmpty()) {
             int count = trades.size();
-            level = Math.max(1, Math.min(5, (count + 1) / 2));
+            if (count <= 2) {
+                level = 1;
+            } else if (count == 3) {
+                level = 2;
+            } else if (count == 4) {
+                level = 3;
+            } else if (count == 5) {
+                level = 4;
+            } else {
+                level = 5;
+            }
         }
 
         // Keep VillageNames' profession level (which drives skin badge render) synchronized with actual trade level
