@@ -22,7 +22,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
 import com.marrybye.villagertradesbackport.container.ContainerVillager;
-import com.marrybye.villagertradesbackport.mixins.AccessorMerchantRecipe;
 import com.marrybye.villagertradesbackport.network.ModNetwork;
 
 public class GuiVillager extends GuiMerchant {
@@ -125,19 +124,10 @@ public class GuiVillager extends GuiMerchant {
 
         if (level >= 5) {
             currentProgressWidth = 102;
-        } else if (trades != null && !trades.isEmpty()) {
-            int currentUses = 0;
-            int targetUses = Math.max(3, level + 1);
-            if (level == 1) {
-                for (int i = 0; i < Math.min(2, trades.size()); ++i) {
-                    MerchantRecipe r = (MerchantRecipe) trades.get(i);
-                    currentUses += ((AccessorMerchantRecipe) r).getToolUses();
-                }
-            } else {
-                MerchantRecipe r = (MerchantRecipe) trades.get(trades.size() - 1);
-                currentUses = ((AccessorMerchantRecipe) r).getToolUses();
-            }
-            float ratio = Math.min(1.0F, (float) currentUses / (float) targetUses);
+        } else {
+            int progress = this.container.getTierProgress();
+            int target = this.container.getTargetTrades();
+            float ratio = (target > 0) ? Math.min(1.0F, (float) progress / (float) target) : 0.0F;
             currentProgressWidth = (int) (ratio * 102.0F);
         }
 
@@ -285,22 +275,11 @@ public class GuiVillager extends GuiMerchant {
 
         if (level >= 5) {
             text.add(EnumChatFormatting.GRAY + StatCollector.translateToLocal("container.villagertrades.max_level"));
-        } else if (trades != null && !trades.isEmpty()) {
-            int currentUses = 0;
-            int targetUses = Math.max(3, level + 1);
-            if (level == 1) {
-                for (int i = 0; i < Math.min(2, trades.size()); ++i) {
-                    MerchantRecipe r = (MerchantRecipe) trades.get(i);
-                    currentUses += ((AccessorMerchantRecipe) r).getToolUses();
-                }
-            } else {
-                MerchantRecipe r = (MerchantRecipe) trades.get(trades.size() - 1);
-                currentUses = ((AccessorMerchantRecipe) r).getToolUses();
-            }
+        } else {
             text.add(
-                EnumChatFormatting.GRAY.toString() + currentUses
+                EnumChatFormatting.GRAY.toString() + this.container.getTierProgress()
                     + " / "
-                    + targetUses
+                    + this.container.getTargetTrades()
                     + " "
                     + StatCollector.translateToLocal("container.villagertrades.trades_count"));
         }

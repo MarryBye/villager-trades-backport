@@ -19,18 +19,24 @@ import io.netty.buffer.ByteBuf;
 public class PacketSyncTradeUses implements IMessage {
 
     private int level;
+    private int tierProgress;
+    private int targetTrades;
     private int[] uses;
 
     public PacketSyncTradeUses() {}
 
-    public PacketSyncTradeUses(int level, int[] uses) {
+    public PacketSyncTradeUses(int level, int tierProgress, int targetTrades, int[] uses) {
         this.level = level;
+        this.tierProgress = tierProgress;
+        this.targetTrades = targetTrades;
         this.uses = uses;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
         this.level = buf.readInt();
+        this.tierProgress = buf.readInt();
+        this.targetTrades = buf.readInt();
         int length = buf.readInt();
         this.uses = new int[length];
         for (int i = 0; i < length; ++i) {
@@ -41,6 +47,8 @@ public class PacketSyncTradeUses implements IMessage {
     @Override
     public void toBytes(ByteBuf buf) {
         buf.writeInt(this.level);
+        buf.writeInt(this.tierProgress);
+        buf.writeInt(this.targetTrades);
         if (this.uses == null) {
             buf.writeInt(0);
         } else {
@@ -60,6 +68,8 @@ public class PacketSyncTradeUses implements IMessage {
             if (player != null && player.openContainer instanceof ContainerVillager) {
                 ContainerVillager container = (ContainerVillager) player.openContainer;
                 container.setVillagerLevel(message.level);
+                container.setTierProgress(message.tierProgress);
+                container.setTargetTrades(message.targetTrades);
 
                 if (message.uses != null) {
                     IMerchant merchant = container.getMerchant();
