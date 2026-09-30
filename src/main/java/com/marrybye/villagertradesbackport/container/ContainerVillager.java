@@ -27,10 +27,6 @@ public class ContainerVillager extends ContainerMerchant {
         this.inventorySlots.clear();
         this.inventoryItemStacks.clear();
 
-        if (playerInv.player instanceof net.minecraft.inventory.ICrafting) {
-            this.crafters.add((net.minecraft.inventory.ICrafting) playerInv.player);
-        }
-
         int index = 0;
         // Merchant buy slot 1
         this.addSlotToContainer(new Slot(this.merchantInventory, index++, 136, 37));
