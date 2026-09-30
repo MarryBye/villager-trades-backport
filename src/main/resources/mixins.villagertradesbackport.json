@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8.7",
+  "package": "com.marrybye.villagertradesbackport.mixins",
+  "refmap": "mixins.villagertradesbackport.refmap.json",
+  "target": "@env(DEFAULT)",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "MixinEntityPlayerMP"
+  ],
+  "client": [
+    "AccessorGuiMerchant",
+    "MixinGuiMerchant"
+  ]
+}

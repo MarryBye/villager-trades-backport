@@ -1,4 +1,4 @@
-package com.myname.mymodid;
+package com.marrybye.villagertradesbackport;
 
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
@@ -11,9 +11,10 @@ public class CommonProxy {
     // GameRegistry." (Remove if not needed)
     public void preInit(FMLPreInitializationEvent event) {
         Config.synchronizeConfiguration(event.getSuggestedConfigurationFile());
+        com.marrybye.villagertradesbackport.network.ModNetwork.init();
 
-        MyMod.LOG.info(Config.greeting);
-        MyMod.LOG.info("I am MyMod at version " + Tags.VERSION);
+        VillagerTradesBackport.LOG.info(Config.greeting);
+        VillagerTradesBackport.LOG.info("I am Villager Trades Backport at version " + Tags.VERSION);
     }
 
     // load "Do your mod setup. Build whatever data structures you care about. Register recipes." (Remove if not needed)

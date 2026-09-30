@@ -1,109 +1,101 @@
-# Example Forge Mod for Minecraft 1.7.10
+<p align="center">
+  <img src="logo.png" alt="Villager Trades Backport Logo" width="220" />
+</p>
 
-[![](https://jitpack.io/v/GTNewHorizons/ExampleMod1.7.10.svg)](https://jitpack.io/#GTNewHorizons/ExampleMod1.7.10)
-[![](https://github.com/GTNewHorizons/ExampleMod1.7.10/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/GTNewHorizons/ExampleMod1.7.10/actions/workflows/build-and-test.yml)
+# Villager Trades Backport
 
-An example mod for Minecraft 1.7.10 with Forge focussed on a stable, updatable setup.
+[![Minecraft 1.7.10](https://img.shields.io/badge/Minecraft-1.7.10-blue.svg)](https://minecraft.net/)
+[![Forge](https://img.shields.io/badge/Forge-10.13.4.1614-orange.svg)](https://files.minecraftforge.net/)
 
-<!-- omit in toc -->
-### Table of Contents
+**Villager Trades Backport** — модификация для Minecraft 1.7.10 на базе сборочного стека GTNH (RetroFuturaGradle / UniMixins), полностью переносящая современную систему торговли деревенских жителей (Minecraft 1.14+ Village & Pillage и Villager Trade Rebalance) в версию 1.7.10 на основе открытого мода с оптимизацией и глубокой интеграцией в экосистему GTNH.
 
-* [Example Forge Mod for Minecraft 1.7.10](#example-forge-mod-for-minecraft-1710)
-    * [Motivation](#motivation)
-    * [Help! I'm stuck!](#help-im-stuck)
-    * [Getting started](#getting-started)
-    * [Features](#features)
-    * [Files](#files)
-    * [Forge's Access Transformers](#forges-access-transformers)
-    * [Mixins](#mixins)
-    * [Advanced](#advanced)
-    * [Feedback wanted](#feedback-wanted)
+**Авторы:** `MarryBye` + `Gemini AI`
 
+---
 
-### Motivation
+## 🎯 Основные механики и возможности
 
-We had our fair share in struggles with build scripts for Minecraft Forge. There are quite a few pitfalls from non-obvious error messages. This Example Project provides you a build system you can adapt to over 90% of Minecraft Forge mods and can easily be updated if need be.
+- 📜 **Уровни мастерства и прогресс опыта (Villager Levels & XP):**
+  - Пять уровней профессионализма жителей: **Новичок (Novice)**, **Ученик (Apprentice)**, **Подмастерье (Journeyman)**, **Эксперт (Expert)** и **Мастер (Master)**.
+  - Наглядная шкала опыта в интерфейсе торговли, отображающая прогресс до следующего уровня.
+  - Каждая совершенная сделка начисляет опыт жителю, а при достижении нового уровня открываются новые, более ценные и разнообразные торговые предложения.
+  - Визуальные значки уровня (камень, железо, золото, изумруд, алмаз) на одежде и в интерфейсе жителя.
 
-### Help! I'm stuck!
+- 🔄 **Пополнение запасов и лимиты сделок (Restocking & Demand):**
+  - Сделки больше не блокируются навсегда: при исчерпании запаса житель может пополнять запасы товаров (restock) до 2 раз в день при доступе к рабочему месту.
+  - Динамическое ценообразование: активная скупка определенного товара временно увеличивает его цену из-за высокого спроса, а со временем цена возвращается к базовой.
+  - Скидки за репутацию: скидки за высокий уровень популярности в деревне, спасение и исцеление жителей-зомби, а также эффект «Герой деревни».
 
-We all have been there! Check out our [FAQ](https://github.com/GTNewHorizons/ExampleMod1.7.10/blob/main/docs/FAQ.md). If that doesn't help, please open an issue.
+- 🖥️ **Современный торговый интерфейс (Modern Trading GUI 1.14+):**
+  - Полноценная двухпанельная панель обмена: вертикальный список всех доступных и открытых предложений слева со скроллингом и быстрый обмен в один клик.
+  - Отображение точных затрат с учетом скидок (зачеркнутая базовая цена и актуальная сниженная).
+  - Плавная прокрутка списка сделок колесом мыши с аппаратной поддержкой [lwjgl3ify](https://github.com/GTNewHorizons/lwjgl3ify).
 
-### Getting started
+- 🗺️ **Биомные профессии и ребаланс торгов (Biome Trades & Trade Rebalance):**
+  - Поддержка биомных вариаций жителей (пустыня, джунгли, саванна, равнины, тайга, болото, снежные биомы).
+  - Опциональная механика Villager Trade Rebalance с разделением зачарованных книг по биомам для библиотекарей и сбалансированными таблицами обмена.
 
-> [!WARNING]
-> Do not clone or fork this repository when creating a new mod. It contains files that are specific to this example project and are not part of the mod template. Use the [project starter](https://github.com/GTNewHorizons/ExampleMod1.7.10/releases/download/master-packages/starter.zip) instead.
+- 🛠️ **Рабочие места и профессии (Workstations & Job Sites):**
+  - Интеграция с рабочими блоками профессий.
+  - Возможность смены профессии у незакрепленных жителей без совершенных сделок.
 
-Creating mod from scratch:
-1. Unzip [project starter](https://github.com/GTNewHorizons/ExampleMod1.7.10/releases/download/master-packages/starter.zip) into project directory.
-2. Replace placeholders in LICENSE-template and rename it to LICENSE, or remove LICENSE-template and put any other license you like on your code. This is an permissive OSS project and we encourage you participate in OSS movement by having permissive license like one in template. You can find out pros and cons of OSS software in [this article](https://www.freecodecamp.org/news/what-is-great-about-developing-open-source-and-what-is-not/)
-3. Ensure your project is under VCS. For example initialise git repository by running `git init; git commit --message "initialized repository"`.
-4. Replace placeholders (edit values in gradle.properties, change example package and class names, etc.)
-5. Run `./gradlew setupDecompWorkspace`
-6. Run `./gradlew build`
-6. Make sure to check out the rest sections of this file.
-7. You are good to go!
+---
 
-We also have described guidelines for existing mod [migration](docs/migration.md) and [porting](docs/porting.md)
+## 🧩 Внешние зависимости и совместимость (Compatibility)
 
-### Features
+Мод спроектирован с учетом обязательной работы с ключевыми компонентами платформы [GTNewHorizons](https://github.com/GTNewHorizons), а также бесшовной интеграции с популярными модами экосистемы:
 
- - Updatable: Replace [`build.gradle`](https://github.com/GTNewHorizons/ExampleMod1.7.10/blob/main/build.gradle) with a newer version
- - Optional API artifact (.jar)
- - Optional version replacement in Java files
- - Optional shadowing of dependencies
- - Simplified setup of Mixin and example
- - Scala support (add sources under `src/main/scala/` instead of `src/main/java/`)
- - Optional named developer account for consistent player progression during testing
- - Boilerplate forge mod as starting point
- - Improved warnings for pitfalls
- - Git Tags integration for versioning
- - [Jitpack](https://jitpack.io) CI
- - GitHub CI:
-   - Releasing your artifacts on new tags pushed. Push git tag named after version (e.g. 1.0.0) which will trigger a release of artifacts with according names.
-   - Running smoke test for server startup. On any server crash occurring workflow will fail and print the crash log.
+| Мод | Репозиторий GTNH | Статус | Назначение и интеграция |
+| :--- | :--- | :--- | :--- |
+| [**UniMixins**](https://github.com/GTNewHorizons/UniMixins) | [`GTNewHorizons/UniMixins`](https://github.com/GTNewHorizons/UniMixins) | **Обязателен** | Базовая система миксинов (Mixin 0.8.7) для внедрения логики торговли в классы `EntityVillager`, `MerchantRecipeList` и интерфейсы Forge. |
+| [**GTNHLib**](https://github.com/GTNewHorizons/GTNHLib) | [`GTNewHorizons/GTNHLib`](https://github.com/GTNewHorizons/GTNHLib) | **Обязателен** | Фундаментальная библиотека утилит, сериализации, работы с событиями и оптимизаций платформы GTNH. |
+| [**lwjgl3ify**](https://github.com/GTNewHorizons/lwjgl3ify) | [`GTNewHorizons/lwjgl3ify`](https://github.com/GTNewHorizons/lwjgl3ify) | **Обязателен** | Современный бэкенд LWJGL 3: сырой ввод мыши, плавный скроллинг списка сделок в GUI и корректный рендеринг шрифтов. |
+| [**Village Names**](https://github.com/GTNewHorizons/VillageNames) | [`GTNewHorizons/VillageNames`](https://github.com/GTNewHorizons/VillageNames) | **Обязателен** | Глубокая синергия: совместимость с генерацией деревень, именами жителей, кастомными профессиями и биомными костюмами VillageNames. |
+| [**Angelica**](https://github.com/GTNewHorizons/Angelica) | [`GTNewHorizons/Angelica`](https://github.com/GTNewHorizons/Angelica) | Поддерживается | Графический движок Sodium / Iris для 1.7.10: максимальный FPS, плавный рендеринг интерфейса торговли без графических артефактов. |
+| [**Et Futurum Requiem**](https://github.com/GTNewHorizons/Et-Futurum-Requiem) | [`GTNewHorizons/Et-Futurum-Requiem`](https://github.com/GTNewHorizons/Et-Futurum-Requiem) | Поддерживается | Интеграция современных предметов (бочки, точило, фонари, новые зачарования и ресурсы) в таблицы торговли соответствующих профессий. |
+| [**Hodgepodge**](https://github.com/GTNewHorizons/Hodgepodge) | [`GTNewHorizons/Hodgepodge`](https://github.com/GTNewHorizons/Hodgepodge) | Поддерживается | Комплекс платформенных фиксов, оптимизаций тиков сущностей и инвентарей. |
+| [**Not Enough Items (NEI)**](https://github.com/GTNewHorizons/NotEnoughItems) | [`GTNewHorizons/NotEnoughItems`](https://github.com/GTNewHorizons/NotEnoughItems) | Поддерживается | Полноценная поддержка оверлея NEI в окне торговли жителей, поиск и просмотр рецептов. |
+| [**NEI Integration**](https://github.com/GTNewHorizons/NEI-Integration) | [`GTNewHorizons/NEI-Integration`](https://github.com/GTNewHorizons/NEI-Integration) | Поддерживается | Отображение торговых сделок и предложений жителей в каталоге NEI. |
+| [**Tinkers' Construct (TiC)**](https://github.com/GTNewHorizons/TinkersConstruct) | [`GTNewHorizons/TinkersConstruct`](https://github.com/GTNewHorizons/TinkersConstruct) | Поддерживается | Совместимость со сделками и профессиями деревенских жителей из Tinkers' Construct. |
 
-### Files
- - [`build.gradle`](https://github.com/GTNewHorizons/ExampleMod1.7.10/blob/main/build.gradle): This is the core script of the build process. You should not need to tamper with it, unless you are trying to accomplish something out of the ordinary. __Do not touch this file! You will make a future update near impossible if you do so!__
- - [`gradle.properties`](https://github.com/GTNewHorizons/ExampleMod1.7.10/blob/main/gradle.properties): The core configuration file. It includes
- - [`dependencies.gradle[.kts]`](https://github.com/GTNewHorizons/ExampleMod1.7.10/blob/main/dependencies.gradle): Add your mod's dependencies in this file. This is separate from the main build script, so you may replace the [`build.gradle`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/build.gradle) if an update is available.
- - [`repositories.gradle[.kts]`](https://github.com/GTNewHorizons/ExampleMod1.7.10/blob/main/repositories.gradle): Add your dependencies' repositories. This is separate from the main build script, so you may replace the [`build.gradle`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/build.gradle) if an update is available.
- - `addon.gradle[.kts]`: Any additional build logic. This is separate from the main build script, so you may replace the [`build.gradle`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/build.gradle) if an update is available. See [Advanced](#advanced) for more details.
- - [`jitpack.yml`](https://github.com/GTNewHorizons/ExampleMod1.7.10/blob/main/jitpack.yml): Ensures that your mod is available as import over [Jitpack](https://jitpack.io).
- - [`.github/workflows/gradle.yml`](https://github.com/GTNewHorizons/ExampleMod1.7.10/blob/main/.github/workflows/gradle.yml): A simple CI script that will build your mod any time it is pushed to `master` or `main` and publish the result as release in your repository. This feature is free with GitHub if your repository is public.
+---
 
-### Forge's Access Transformers
+## 👨‍💻 Руководство для разработчиков (Developer Guide)
 
-You may activate Forge's Access Transformers by defining a configuration file in `gradle.properties`.
+### Где брать зависимости для локальной разработки:
 
-Check out the [`example-access-transformers`](https://github.com/GTNewHorizons/ExampleMod1.7.10/tree/example-access-transformers) branch for a working example!
+Все внешние бинарные dev-зависимости исключены из системы контроля версий (`.gitignore`), чтобы не засорять Git-репозиторий тяжелыми jar-файлами.
 
-> [!WARNING]
-> Access Transformers are bugged and will deny you any sources for the decompiled Minecraft! Your development environment will still work, but you might face some inconveniences. For example, IntelliJ will not permit searches in dependencies without attached sources.
+Для компиляции и локального тестирования мода вам понадобятся dev-сборки модов. Вы можете взять их:
+1. Из официальных релизов репозиториев организации **[GTNewHorizons](https://github.com/GTNewHorizons)** по ссылкам из таблицы выше (скачивайте архивы с постфиксом `-dev.jar`).
+2. Либо скомпилировать локально из соответствующих репозиториев командой `./gradlew build`.
 
-### Mixins
+**Список файлов в папке `libs/`:**
+- `+unimixins-all-1.7.10-<version>-dev.jar` *(обязательно)*
+- `gtnhlib-<version>-dev.jar` *(обязательно)*
+- `lwjgl3ify-<version>-dev.jar` *(обязательно)*
+- `VillageNames-<version>-GTNH-dev.jar` *(обязательно)*
+- `angelica-<version>-dev.jar` *(поддерживается)*
+- `etfuturum-<version>-GTNH-dev.jar` *(поддерживается)*
+- `hodgepodge-<version>-dev.jar` *(поддерживается)*
+- `NotEnoughItems-<version>-GTNH-dev.jar` *(поддерживается)*
+- `NEIIntegration-<version>-dev.jar` *(поддерживается)*
+- `TConstruct-<version>-GTNH-dev.jar` *(поддерживается)*
 
-[Mixins](https://github.com/SpongePowered/Mixin) are used to modify vanilla or mod/library code during runtime without having to edit, recompile, and redistribute the original code. For example, mixins can change a hardcoded value, redirect a method call, inject additional code, access private fields/methods, make a class implement your interface, and more. Mixins are an advanced feature which most normal mods will not require.
+Поместите эти jar-файлы в директорию `libs/` в корне проекта. Сборочный скрипт `dependencies.gradle` настроен на автоматическое подключение всех `.jar` файлов из этой папки (`compileOnly(fileTree(dir: "libs", include: ["*.jar"]))`).
 
-Documentation about Mixin features can be found here: [Mixin Wiki](https://github.com/SpongePowered/Mixin/wiki) and [MixinExtras Wiki](https://github.com/LlamaLad7/MixinExtras/wiki)
+> [!IMPORTANT]
+> **Принцип мягкой совместимости:** Мод гарантирует компиляцию и работу на базовом окружении (Forge + UniMixins + GTNHLib + lwjgl3ify + VillageNames). Интеграции с модами `Angelica`, `Et Futurum Requiem`, `Tinkers' Construct` и `NEI` выполнены мягко (soft-dependencies) и защищены проверками наличия в рантайме.
 
-There are many examples of mixins in these mods: [Hodgepodge](https://github.com/GTNewHorizons/Hodgepodge) and [Angelica](https://github.com/GTNewHorizons/Angelica)
+---
 
-To enable Mixins in your project, follow one of the example commits:
-- use [normal mixins](https://github.com/GTNewHorizons/ExampleMod1.7.10/commit/beba55615fa8337b7639f0d5b18db6cc8d4826be) for basic and quick registration
-- use [GTNH IMixins](https://github.com/GTNewHorizons/ExampleMod1.7.10/commit/055cd4f18765a421a86c706f53b62116988297e3) (recommended) for the same thing as below, but in a less verbose and more unified manner using the IMixins api
-- use [GTNH Early/Late mixins](https://github.com/GTNewHorizons/ExampleMod1.7.10/commit/c4df59d92164775b69451f3e690239e93d1fc979) to have full control over the registration logic and check for presence of other mods during runtime to load your mixins
+## 🛠️ Сборка и запуск
 
-The extra required dependencies are handled automatically after mixins are enabled.
-
-### Advanced
-
-If your project requires custom gradle commands you may add a `addon.gradle[.kts]` to your project. It will be added automatically to the build script. Although we recommend against it, it is sometimes required. When in doubt, feel free to ask us about it. You may break future updates of this build system!
-If you need access to properties modified later in the buildscript, you can also use a `addon.late.gradle[.kts]`.
-For local tweaks that you don't want to commit to Git, like adding extra JVM arguments for testing, use `addon[.late].local.gradle[.kts]`.
-
-### Feedback wanted
-
-If you tried out this build script we would love to head your opinion! Is there any feature missing for you? Did something not work? Please open an issue and we will try to resolve it asap!
-
-Happy modding,\
-[SinTh0r4s](https://github.com/SinTh0r4s), [TheElan](https://github.com/TheElan) and [basdxz](https://github.com/basdxz)
+```bash
+# 1. Поместите dev-jar зависимости в папку libs/ (см. раздел для разработчиков выше)
+./gradlew setupDecompWorkspace # Подготовка декомпилированного рабочего пространства
+./gradlew runClient           # Запуск клиента Minecraft для тестирования
+./gradlew build               # Сборка готового jar-файла мода
+./gradlew spotlessApply       # Автоматическое форматирование кода в соответствии со стандартами
+./gradlew clean               # Очистка директории сборки
+```

@@ -1,4 +1,4 @@
-package com.myname.mymodid;
+package com.marrybye.villagertradesbackport;
 
 import java.io.File;
 
