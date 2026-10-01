@@ -10,6 +10,14 @@ public class VillageNamesCompat {
 
     private static final boolean IS_VILLAGE_NAMES_LOADED = Loader.isModLoaded("VillageNames");
 
+    public static void init() {
+        if (IS_VILLAGE_NAMES_LOADED) {
+            try {
+                astrotibs.villagenames.config.GeneralConfig.modernVillagerTrades = false;
+            } catch (Throwable ignored) {}
+        }
+    }
+
     public static int getVillagerLevel(IMerchant merchant, MerchantRecipeList trades) {
         if (merchant instanceof EntityVillager) {
             EntityVillager villager = (EntityVillager) merchant;
@@ -20,6 +28,10 @@ public class VillageNamesCompat {
                 if (saved >= 1 && saved <= 5) {
                     return saved;
                 }
+            }
+            if (com.marrybye.villagertradesbackport.trade.VillagerTradeManager.isCustomizableVillager(villager)) {
+                return com.marrybye.villagertradesbackport.trade.VillagerTradeManager.getLevelFromXp(
+                    com.marrybye.villagertradesbackport.trade.VillagerTradeManager.getVillagerXp(villager));
             }
             if (IS_VILLAGE_NAMES_LOADED) {
                 try {
@@ -65,6 +77,34 @@ public class VillageNamesCompat {
         }
     }
 
+    public static void sendModernSkinUpdate(EntityVillager villager) {
+        if (!IS_VILLAGE_NAMES_LOADED || villager.worldObj == null || villager.worldObj.isRemote) {
+            return;
+        }
+        try {
+            astrotibs.villagenames.ieep.ExtendedVillager ev = astrotibs.villagenames.ieep.ExtendedVillager
+                .get(villager);
+            if (ev == null) return;
+
+            cpw.mods.fml.common.network.NetworkRegistry.TargetPoint targetPoint = new cpw.mods.fml.common.network.NetworkRegistry.TargetPoint(
+                villager.dimension,
+                villager.posX,
+                villager.posY,
+                villager.posZ,
+                80.0D);
+
+            astrotibs.villagenames.VillageNames.VNNetworkWrapper.sendToAllAround(
+                new astrotibs.villagenames.network.MessageModernVillagerSkin(
+                    villager.getEntityId(),
+                    villager.getProfession(),
+                    ev.getCareer(),
+                    ev.getBiomeType(),
+                    ev.getProfessionLevel(),
+                    ev.getSkinTone()),
+                targetPoint);
+        } catch (Throwable ignored) {}
+    }
+
     private static int getVillageNamesProfessionLevel(EntityVillager villager) {
         astrotibs.villagenames.ieep.ExtendedVillager ev = astrotibs.villagenames.ieep.ExtendedVillager.get(villager);
         return ev != null ? ev.getProfessionLevel() : -1;
@@ -74,6 +114,7 @@ public class VillageNamesCompat {
         astrotibs.villagenames.ieep.ExtendedVillager ev = astrotibs.villagenames.ieep.ExtendedVillager.get(villager);
         if (ev != null && ev.getProfessionLevel() != level) {
             ev.setProfessionLevel(level);
+            sendModernSkinUpdate(villager);
         }
     }
 }

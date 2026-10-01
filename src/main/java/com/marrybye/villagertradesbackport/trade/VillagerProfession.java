@@ -45,36 +45,78 @@ public enum VillagerProfession {
     }
 
     public boolean isJobSiteBlock(Block block) {
-        if (block == null) return false;
+        if (block == null || block == Blocks.air) return false;
+        boolean etLoaded = cpw.mods.fml.common.Loader.isModLoaded("etfuturum");
+
         switch (this) {
             case ARMORER:
-                return block == ModCompatItems.getBlock("etfuturum", "blast_furnace", Blocks.furnace)
-                    || block == ModCompatItems.getBlock("etfuturum", "lit_blast_furnace", Blocks.lit_furnace);
+                if (etLoaded) {
+                    Block blast = ModCompatItems.getBlock("etfuturum", "blast_furnace", null);
+                    Block litBlast = ModCompatItems.getBlock("etfuturum", "lit_blast_furnace", null);
+                    return (blast != null && block == blast) || (litBlast != null && block == litBlast);
+                }
+                return block == Blocks.furnace || block == Blocks.lit_furnace;
             case BUTCHER:
-                return block == ModCompatItems.getBlock("etfuturum", "smoker", Blocks.furnace)
-                    || block == ModCompatItems.getBlock("etfuturum", "lit_smoker", Blocks.lit_furnace);
+                if (etLoaded) {
+                    Block smoker = ModCompatItems.getBlock("etfuturum", "smoker", null);
+                    Block litSmoker = ModCompatItems.getBlock("etfuturum", "lit_smoker", null);
+                    return (smoker != null && block == smoker) || (litSmoker != null && block == litSmoker);
+                }
+                return false;
             case CARTOGRAPHER:
-                return block == ModCompatItems.getBlock("etfuturum", "cartography_table", Blocks.crafting_table);
+                if (etLoaded) {
+                    Block cart = ModCompatItems.getBlock("etfuturum", "cartography_table", null);
+                    return cart != null && block == cart;
+                }
+                return false;
             case CLERIC:
                 return block == Blocks.brewing_stand;
             case FARMER:
-                return block == ModCompatItems.getBlock("etfuturum", "composter", Blocks.hay_block);
+                if (etLoaded) {
+                    Block composter = ModCompatItems.getBlock("etfuturum", "composter", null);
+                    return composter != null && block == composter;
+                }
+                return block == Blocks.hay_block;
             case FISHERMAN:
-                return block == ModCompatItems.getBlock("etfuturum", "barrel", Blocks.chest);
+                if (etLoaded) {
+                    Block barrel = ModCompatItems.getBlock("etfuturum", "barrel", null);
+                    return barrel != null && block == barrel;
+                }
+                return false;
             case FLETCHER:
-                return block == ModCompatItems.getBlock("etfuturum", "fletching_table", Blocks.crafting_table);
+                if (etLoaded) {
+                    Block fletcher = ModCompatItems.getBlock("etfuturum", "fletching_table", null);
+                    return fletcher != null && block == fletcher;
+                }
+                return false;
             case LEATHERWORKER:
                 return block == Blocks.cauldron;
             case LIBRARIAN:
-                return block == ModCompatItems.getBlock("etfuturum", "lectern", Blocks.bookshelf);
+                Block lectern = ModCompatItems.getBlock("etfuturum", "lectern", null);
+                if (lectern != null && block == lectern) return true;
+                return block == Blocks.bookshelf;
             case MASON:
-                return block == ModCompatItems.getBlock("etfuturum", "stonecutter", Blocks.stonebrick);
+                if (etLoaded) {
+                    Block stonecutter = ModCompatItems.getBlock("etfuturum", "stonecutter", null);
+                    return stonecutter != null && block == stonecutter;
+                }
+                return false;
             case SHEPHERD:
-                return block == ModCompatItems.getBlock("etfuturum", "loom", Blocks.wool);
+                if (etLoaded) {
+                    Block loom = ModCompatItems.getBlock("etfuturum", "loom", null);
+                    return loom != null && block == loom;
+                }
+                return false;
             case TOOLSMITH:
-                return block == ModCompatItems.getBlock("etfuturum", "smithing_table", Blocks.anvil);
+                if (etLoaded) {
+                    Block smith = ModCompatItems.getBlock("etfuturum", "smithing_table", null);
+                    return smith != null && block == smith;
+                }
+                return false;
             case WEAPONSMITH:
-                return block == ModCompatItems.getBlock("etfuturum", "grindstone", Blocks.anvil);
+                Block grindstone = ModCompatItems.getBlock("etfuturum", "grindstone", null);
+                if (grindstone != null && block == grindstone) return true;
+                return block == Blocks.anvil;
             case NITWIT:
             default:
                 return false;

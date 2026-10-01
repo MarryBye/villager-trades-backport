@@ -20,7 +20,16 @@ public abstract class MixinEntityVillager {
     private void onAddDefaultEquipmentAndRecipies(int count, CallbackInfo ci) {
         EntityVillager villager = (EntityVillager) (Object) this;
         if (VillagerTradeManager.isCustomizableVillager(villager)) {
-            VillagerTradeManager.initVillagerTrades(villager);
+            AccessorEntityVillager acc = (AccessorEntityVillager) villager;
+            acc.setNeedsInitilization(false);
+            if (acc.getBuyingList() == null) {
+                VillagerProfession prof = VillagerTradeManager.getProfession(villager);
+                if (prof != null && prof != VillagerProfession.NITWIT) {
+                    VillagerTradeManager.initVillagerTrades(villager);
+                } else {
+                    acc.setBuyingList(new net.minecraft.village.MerchantRecipeList());
+                }
+            }
             ci.cancel();
         }
     }
@@ -30,7 +39,7 @@ public abstract class MixinEntityVillager {
         EntityVillager villager = (EntityVillager) (Object) this;
         if (VillagerTradeManager.isCustomizableVillager(villager)) {
             VillagerProfession prof = VillagerTradeManager.getProfession(villager);
-            if (prof == VillagerProfession.NITWIT) {
+            if (prof == null || prof == VillagerProfession.NITWIT) {
                 villager.worldObj.playSoundAtEntity(villager, "mob.villager.no", 1.0F, 1.0F);
                 cir.setReturnValue(true);
             }
@@ -40,6 +49,9 @@ public abstract class MixinEntityVillager {
     @Inject(method = "useRecipe", at = @At("TAIL"))
     private void onUseRecipe(MerchantRecipe recipe, CallbackInfo ci) {
         EntityVillager villager = (EntityVillager) (Object) this;
-        VillagerTradeManager.onTradeUsed(villager, recipe, villager.getCustomer());
+        if (VillagerTradeManager.isCustomizableVillager(villager)) {
+            ((AccessorEntityVillager) villager).setNeedsInitilization(false);
+            VillagerTradeManager.onTradeUsed(villager, recipe, villager.getCustomer());
+        }
     }
 }

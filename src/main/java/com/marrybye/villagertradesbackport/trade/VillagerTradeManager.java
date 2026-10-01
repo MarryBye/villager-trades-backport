@@ -1,7 +1,6 @@
 package com.marrybye.villagertradesbackport.trade;
 
 import java.util.List;
-import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.entity.item.EntityXPOrb;
@@ -94,56 +93,32 @@ public class VillagerTradeManager {
             } catch (Exception ignored) {}
         }
 
-        int profId = villager.getProfession();
-        int careerId = 1;
-
-        if (IS_VILLAGE_NAMES_LOADED) {
-            try {
-                astrotibs.villagenames.ieep.ExtendedVillager ev = astrotibs.villagenames.ieep.ExtendedVillager
-                    .get(villager);
-                if (ev != null) {
-                    careerId = ev.getCareer();
-                    if (careerId <= 0) {
-                        careerId = astrotibs.villagenames.ieep.ExtendedVillager
-                            .pickRandomCareer(villager.getRNG(), profId);
-                        ev.setCareer(careerId);
-                    }
-                }
-            } catch (Throwable ignored) {}
-        } else {
-            // Random career if pure vanilla
-            Random rng = villager.getRNG();
-            switch (profId) {
-                case 0:
-                    careerId = 1 + rng.nextInt(4);
-                    break; // Farmer, Fisherman, Shepherd, Fletcher
-                case 1:
-                    careerId = 1 + rng.nextInt(2);
-                    break; // Librarian, Cartographer
-                case 2:
-                    careerId = 1;
-                    break; // Cleric
-                case 3:
-                    careerId = 1 + rng.nextInt(4);
-                    break; // Armorer, Weaponsmith, Toolsmith, Mason
-                case 4:
-                    careerId = 1 + rng.nextInt(2);
-                    break; // Butcher, Leatherworker
-                case 5:
-                    careerId = 1;
-                    break; // Nitwit
-            }
+        if (villager.getProfession() == 5) {
+            setProfession(villager, VillagerProfession.NITWIT);
+            return VillagerProfession.NITWIT;
         }
 
-        VillagerProfession prof = VillagerProfession.fromIds(profId, careerId);
-        if (prof != null) {
-            setProfession(villager, prof);
-        }
-        return prof;
+        return null;
     }
 
     public static void setProfession(EntityVillager villager, VillagerProfession prof) {
-        if (prof == null) return;
+        if (prof == null) {
+            villager.getEntityData()
+                .removeTag("VTB_ProfessionName");
+            if (IS_VILLAGE_NAMES_LOADED) {
+                try {
+                    astrotibs.villagenames.ieep.ExtendedVillager ev = astrotibs.villagenames.ieep.ExtendedVillager
+                        .get(villager);
+                    if (ev != null) {
+                        ev.setCareer(0);
+                        ev.setProfessionLevel(0);
+                        VillageNamesCompat.sendModernSkinUpdate(villager);
+                    }
+                } catch (Throwable ignored) {}
+            }
+            return;
+        }
+
         villager.getEntityData()
             .setString("VTB_ProfessionName", prof.name());
         villager.setProfession(prof.getVanillaProfession());
@@ -154,6 +129,8 @@ public class VillagerTradeManager {
                     .get(villager);
                 if (ev != null) {
                     ev.setCareer(prof.getCareerId());
+                    ev.setProfessionLevel(Math.max(1, getLevelFromXp(getVillagerXp(villager))));
+                    VillageNamesCompat.sendModernSkinUpdate(villager);
                 }
             } catch (Throwable ignored) {}
         }
@@ -253,9 +230,12 @@ public class VillagerTradeManager {
         for (int lvl = fromLevel + 1; lvl <= toLevel; lvl++) {
             List<MerchantRecipe> newTrades = ProfessionTrades.generateTradesForTier(prof, lvl, villager.getRNG(), 2);
             for (MerchantRecipe r : newTrades) {
-                buyList.addToListWithCheck(r);
+                buyList.add(r);
             }
         }
+
+        VillageNamesCompat.syncVillagerLevel(villager, toLevel);
+        VillageNamesCompat.sendModernSkinUpdate(villager);
 
         // Play level-up visual effects and sound
         villager.worldObj.setEntityState(villager, (byte) 14);
@@ -287,7 +267,7 @@ public class VillagerTradeManager {
 
     /**
      * Called periodically during EntityVillager.onLivingUpdate() to handle workstation checking,
-     * profession claiming for 0 XP villagers, and twice-a-day restocking.
+     * profession claiming for 0 XP villagers, workstation break loss, and twice-a-day restocking.
      */
     public static void updateVillagerAI(EntityVillager villager) {
         if (villager.worldObj.isRemote || !isCustomizableVillager(villager)) {
@@ -308,42 +288,94 @@ public class VillagerTradeManager {
                 .setInteger("VTB_RestocksToday", 0);
         }
 
-        // Only tick workstation logic every 80 ticks (4 seconds)
-        if (villager.ticksExisted % 80 != 0) {
+        // Tick workstation & profession logic every 20 ticks (1 second)
+        if (villager.ticksExisted % 20 != 0) {
             return;
         }
 
+        NBTTagCompound tag = villager.getEntityData();
         int xp = getVillagerXp(villager);
         VillagerProfession prof = getProfession(villager);
 
-        // If villager has 0 XP and no locked trades, allow claiming a nearby workstation
-        if (xp == 0) {
-            Block nearbyWorkstation = findNearbyWorkstation(villager);
-            if (nearbyWorkstation != null) {
-                VillagerProfession newProf = VillagerProfession.getProfessionFromBlock(nearbyWorkstation);
-                if (newProf != null && newProf != prof) {
-                    setProfession(villager, newProf);
-                    initVillagerTrades(villager);
-                    villager.worldObj.setEntityState(villager, (byte) 14);
-                    villager.worldObj.playSoundAtEntity(villager, "mob.villager.idle", 1.0F, 1.0F);
-                    return;
+        // 1. Check existing claimed workstation
+        if (tag.getBoolean("VTB_HasJobSite")) {
+            int jx = tag.getInteger("VTB_JobSiteX");
+            int jy = tag.getInteger("VTB_JobSiteY");
+            int jz = tag.getInteger("VTB_JobSiteZ");
+
+            double distSq = villager.getDistanceSq(jx + 0.5D, jy + 0.5D, jz + 0.5D);
+            if (distSq <= 256.0D) { // Within 16 blocks
+                Block currentBlock = villager.worldObj.getBlock(jx, jy, jz);
+                if (prof == null || !prof.isJobSiteBlock(currentBlock)) {
+                    // Workstation is gone / broken!
+                    tag.setBoolean("VTB_HasJobSite", false);
+                    tag.removeTag("VTB_JobSiteX");
+                    tag.removeTag("VTB_JobSiteY");
+                    tag.removeTag("VTB_JobSiteZ");
+
+                    if (xp == 0) {
+                        // Unlocked: villager loses profession!
+                        setProfession(villager, null);
+                        ((AccessorEntityVillager) villager).setBuyingList(new MerchantRecipeList());
+                        villager.worldObj.setEntityState(villager, (byte) 13);
+                        villager.worldObj.playSoundAtEntity(villager, "mob.villager.no", 1.0F, 1.0F);
+                        return;
+                    }
                 }
             }
         }
 
-        // Restocking logic: up to 2 times a day when near their workstation
-        int restocksToday = villager.getEntityData()
-            .getInteger("VTB_RestocksToday");
-        if (restocksToday < 2 && prof != null && prof != VillagerProfession.NITWIT) {
-            // Work hours: morning (2000 to 9000)
+        // 2. If no claimed workstation, try to claim one nearby
+        if (!tag.getBoolean("VTB_HasJobSite")) {
+            if (xp == 0 && prof == null) {
+                // Unemployed: find any unclaimed workstation within 4 blocks
+                int[] coords = findUnclaimedWorkstation(villager, null);
+                if (coords != null) {
+                    Block block = villager.worldObj.getBlock(coords[0], coords[1], coords[2]);
+                    VillagerProfession newProf = VillagerProfession.getProfessionFromBlock(block);
+                    if (newProf != null && newProf != VillagerProfession.NITWIT) {
+                        tag.setBoolean("VTB_HasJobSite", true);
+                        tag.setInteger("VTB_JobSiteX", coords[0]);
+                        tag.setInteger("VTB_JobSiteY", coords[1]);
+                        tag.setInteger("VTB_JobSiteZ", coords[2]);
+
+                        setProfession(villager, newProf);
+                        initVillagerTrades(villager);
+                        villager.worldObj.setEntityState(villager, (byte) 14);
+                        villager.worldObj.playSoundAtEntity(villager, "mob.villager.yes", 1.0F, 1.0F);
+                        return;
+                    }
+                }
+            } else if (prof != null && prof != VillagerProfession.NITWIT) {
+                // Locked profession: look for a matching workstation
+                int[] coords = findUnclaimedWorkstation(villager, prof);
+                if (coords != null) {
+                    tag.setBoolean("VTB_HasJobSite", true);
+                    tag.setInteger("VTB_JobSiteX", coords[0]);
+                    tag.setInteger("VTB_JobSiteY", coords[1]);
+                    tag.setInteger("VTB_JobSiteZ", coords[2]);
+                    villager.worldObj.setEntityState(villager, (byte) 14);
+                    villager.worldObj.playSoundAtEntity(villager, "mob.villager.yes", 1.0F, 1.0F);
+                }
+            }
+        }
+
+        // 3. Restocking logic: up to 2 times a day when near their claimed workstation
+        int restocksToday = tag.getInteger("VTB_RestocksToday");
+        if (restocksToday < 2 && prof != null
+            && prof != VillagerProfession.NITWIT
+            && tag.getBoolean("VTB_HasJobSite")) {
+            // Work hours: morning to evening (2000 to 10000)
             if (dayTime >= 2000L && dayTime <= 10000L) {
-                if (isNearWorkstation(villager, prof)) {
+                int jx = tag.getInteger("VTB_JobSiteX");
+                int jy = tag.getInteger("VTB_JobSiteY");
+                int jz = tag.getInteger("VTB_JobSiteZ");
+                if (villager.getDistanceSq(jx + 0.5D, jy + 0.5D, jz + 0.5D) <= 16.0D) {
                     AccessorEntityVillager acc = (AccessorEntityVillager) villager;
                     MerchantRecipeList buyList = acc.getBuyingList();
                     if (buyList != null && needsRestock(buyList)) {
                         restockAllTrades(buyList);
-                        villager.getEntityData()
-                            .setInteger("VTB_RestocksToday", restocksToday + 1);
+                        tag.setInteger("VTB_RestocksToday", restocksToday + 1);
                         villager.worldObj.setEntityState(villager, (byte) 14);
                         villager.worldObj.playSoundAtEntity(villager, "mob.villager.yes", 1.0F, 1.0F);
                     }
@@ -364,39 +396,52 @@ public class VillagerTradeManager {
         return false;
     }
 
-    private static boolean isNearWorkstation(EntityVillager villager, VillagerProfession prof) {
+    private static int[] findUnclaimedWorkstation(EntityVillager villager, VillagerProfession requiredProf) {
         int x = MathHelper.floor_double(villager.posX);
         int y = MathHelper.floor_double(villager.posY);
         int z = MathHelper.floor_double(villager.posZ);
 
-        for (int dx = -3; dx <= 3; dx++) {
-            for (int dy = -2; dy <= 2; dy++) {
-                for (int dz = -3; dz <= 3; dz++) {
-                    Block block = villager.worldObj.getBlock(x + dx, y + dy, z + dz);
-                    if (prof.isJobSiteBlock(block)) {
+        for (int dy = -2; dy <= 2; dy++) {
+            for (int dx = -4; dx <= 4; dx++) {
+                for (int dz = -4; dz <= 4; dz++) {
+                    int bx = x + dx;
+                    int by = y + dy;
+                    int bz = z + dz;
+                    Block block = villager.worldObj.getBlock(bx, by, bz);
+                    if (block == null || block == net.minecraft.init.Blocks.air) continue;
+
+                    if (requiredProf != null) {
+                        if (!requiredProf.isJobSiteBlock(block)) continue;
+                    } else {
+                        if (VillagerProfession.getProfessionFromBlock(block) == null) continue;
+                    }
+
+                    if (!isJobSiteClaimedByAnother(villager.worldObj, bx, by, bz, villager)) {
+                        return new int[] { bx, by, bz };
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean isJobSiteClaimedByAnother(net.minecraft.world.World world, int x, int y, int z,
+        EntityVillager self) {
+        @SuppressWarnings("unchecked")
+        List<EntityVillager> villagers = world.getEntitiesWithinAABB(
+            EntityVillager.class,
+            net.minecraft.util.AxisAlignedBB.getBoundingBox(x - 16, y - 8, z - 16, x + 16, y + 8, z + 16));
+        for (EntityVillager v : villagers) {
+            if (v != self && v.isEntityAlive()) {
+                NBTTagCompound tag = v.getEntityData();
+                if (tag.getBoolean("VTB_HasJobSite")) {
+                    if (tag.getInteger("VTB_JobSiteX") == x && tag.getInteger("VTB_JobSiteY") == y
+                        && tag.getInteger("VTB_JobSiteZ") == z) {
                         return true;
                     }
                 }
             }
         }
         return false;
-    }
-
-    private static Block findNearbyWorkstation(EntityVillager villager) {
-        int x = MathHelper.floor_double(villager.posX);
-        int y = MathHelper.floor_double(villager.posY);
-        int z = MathHelper.floor_double(villager.posZ);
-
-        for (int dx = -4; dx <= 4; dx++) {
-            for (int dy = -2; dy <= 2; dy++) {
-                for (int dz = -4; dz <= 4; dz++) {
-                    Block block = villager.worldObj.getBlock(x + dx, y + dy, z + dz);
-                    if (VillagerProfession.getProfessionFromBlock(block) != null) {
-                        return block;
-                    }
-                }
-            }
-        }
-        return null;
     }
 }

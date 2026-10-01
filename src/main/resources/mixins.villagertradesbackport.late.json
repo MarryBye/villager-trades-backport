@@ -1,0 +1,8 @@
+{
+  "required": false,
+  "minVersion": "0.8.7",
+  "package": "com.marrybye.villagertradesbackport.mixins.compat",
+  "refmap": "mixins.villagertradesbackport.refmap.json",
+  "target": "@env(DEFAULT)",
+  "compatibilityLevel": "JAVA_8"
+}
