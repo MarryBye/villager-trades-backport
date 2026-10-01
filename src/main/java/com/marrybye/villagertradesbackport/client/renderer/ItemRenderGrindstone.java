@@ -28,7 +28,7 @@ public class ItemRenderGrindstone implements IItemRenderer {
         GL11.glPushMatrix();
 
         if (type == ItemRenderType.EQUIPPED_FIRST_PERSON) {
-            GL11.glTranslatef(0.5F, 0.5F, 0.5F);
+            GL11.glTranslatef(0.5F, 0.3F, 0.5F);
             GL11.glScalef(0.8F, 0.8F, 0.8F);
         } else if (type == ItemRenderType.EQUIPPED) {
             GL11.glTranslatef(0.5F, 0.5F, 0.5F);
@@ -37,10 +37,11 @@ public class ItemRenderGrindstone implements IItemRenderer {
             GL11.glTranslatef(0.0F, -0.1F, 0.0F);
             GL11.glScalef(0.8F, 0.8F, 0.8F);
         } else if (type == ItemRenderType.ENTITY) {
-            GL11.glScalef(0.5F, 0.5F, 0.5F);
+            GL11.glTranslatef(0.0F, -0.2F, 0.0F);
+            GL11.glScalef(0.6F, 0.6F, 0.6F);
         }
 
-        renderer.renderGrindstone(null, 0.0D, 0.0D, 0.0D, 0);
+        renderer.renderGrindstone(null, -0.5D, -0.5D, -0.5D, 0);
 
         GL11.glPopMatrix();
     }

@@ -33,10 +33,8 @@ public class ItemRenderLectern implements IItemRenderer {
             GL11.glTranslatef(0.5F, 0.5F, 0.5F);
             GL11.glScalef(0.7F, 0.7F, 0.7F);
         } else if (type == ItemRenderType.INVENTORY) {
-            GL11.glTranslatef(0.0F, -0.15F, 0.0F);
-            GL11.glScalef(0.75F, 0.75F, 0.75F);
-            GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
-            GL11.glRotatef(30.0F, 1.0F, 0.0F, 0.0F);
+            GL11.glTranslatef(0.0F, -0.1F, 0.0F);
+            GL11.glScalef(0.8F, 0.8F, 0.8F);
         } else if (type == ItemRenderType.ENTITY) {
             GL11.glTranslatef(0.0F, -0.2F, 0.0F);
             GL11.glScalef(0.6F, 0.6F, 0.6F);
