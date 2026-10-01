@@ -22,3 +22,7 @@ entity.Villager.shepherd=Shepherd
 entity.Villager.toolsmith=Toolsmith
 entity.Villager.weaponsmith=Weaponsmith
 entity.Villager.nitwit=Nitwit
+
+tile.villagertradesbackport.lectern.name=Lectern
+tile.villagertradesbackport.grindstone.name=Grindstone
+container.grindstone=Repair & Disenchant

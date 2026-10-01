@@ -22,3 +22,7 @@ entity.Villager.shepherd=Пастух
 entity.Villager.toolsmith=Инструментальщик
 entity.Villager.weaponsmith=Оружейник
 entity.Villager.nitwit=Нищий
+
+tile.villagertradesbackport.lectern.name=Кафедра
+tile.villagertradesbackport.grindstone.name=Точило
+container.grindstone=Починка и снятие чар

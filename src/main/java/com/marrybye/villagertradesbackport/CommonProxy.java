@@ -12,6 +12,7 @@ public class CommonProxy {
     public void preInit(FMLPreInitializationEvent event) {
         Config.synchronizeConfiguration(event.getSuggestedConfigurationFile());
         com.marrybye.villagertradesbackport.network.ModNetwork.init();
+        com.marrybye.villagertradesbackport.block.ModBlocks.init();
 
         VillagerTradesBackport.LOG.info(Config.greeting);
         VillagerTradesBackport.LOG.info("I am Villager Trades Backport at version " + Tags.VERSION);
@@ -19,6 +20,9 @@ public class CommonProxy {
 
     // load "Do your mod setup. Build whatever data structures you care about. Register recipes." (Remove if not needed)
     public void init(FMLInitializationEvent event) {
+        cpw.mods.fml.common.network.NetworkRegistry.INSTANCE.registerGuiHandler(
+            VillagerTradesBackport.instance,
+            new com.marrybye.villagertradesbackport.inventory.ModGuiHandler());
         net.minecraftforge.common.MinecraftForge.EVENT_BUS
             .register(new com.marrybye.villagertradesbackport.event.VillagerEventHandler());
     }

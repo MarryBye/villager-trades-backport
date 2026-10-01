@@ -39,6 +39,7 @@ dependencies {
         "*unimixins*.jar",
         "gtnhlib*.jar",
         "lwjgl3ify*.jar",
-        "VillageNames*.jar"
+        "VillageNames*.jar",
+        "etfuturum*.jar"
     ]))
 }

@@ -92,9 +92,9 @@ public enum VillagerProfession {
             case LEATHERWORKER:
                 return block == Blocks.cauldron;
             case LIBRARIAN:
+                if (block == com.marrybye.villagertradesbackport.block.ModBlocks.lectern) return true;
                 Block lectern = ModCompatItems.getBlock("etfuturum", "lectern", null);
-                if (lectern != null && block == lectern) return true;
-                return block == Blocks.bookshelf;
+                return lectern != null && block == lectern;
             case MASON:
                 if (etLoaded) {
                     Block stonecutter = ModCompatItems.getBlock("etfuturum", "stonecutter", null);
@@ -114,9 +114,9 @@ public enum VillagerProfession {
                 }
                 return false;
             case WEAPONSMITH:
+                if (block == com.marrybye.villagertradesbackport.block.ModBlocks.grindstone) return true;
                 Block grindstone = ModCompatItems.getBlock("etfuturum", "grindstone", null);
-                if (grindstone != null && block == grindstone) return true;
-                return block == Blocks.anvil;
+                return grindstone != null && block == grindstone;
             case NITWIT:
             default:
                 return false;

@@ -14,11 +14,15 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
     modid = VillagerTradesBackport.MODID,
     version = Tags.VERSION,
     name = "Villager Trades Backport",
-    acceptedMinecraftVersions = "[1.7.10]")
+    acceptedMinecraftVersions = "[1.7.10]",
+    dependencies = "required-after:UniMixins;required-after:gtnhlib;required-after:etfuturum;after:VillageNames")
 public class VillagerTradesBackport {
 
     public static final String MODID = "villagertradesbackport";
     public static final Logger LOG = LogManager.getLogger(MODID);
+
+    @Mod.Instance(MODID)
+    public static VillagerTradesBackport instance;
 
     @SidedProxy(
         clientSide = "com.marrybye.villagertradesbackport.ClientProxy",
