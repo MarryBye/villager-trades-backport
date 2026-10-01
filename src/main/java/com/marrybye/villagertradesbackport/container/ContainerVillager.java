@@ -17,9 +17,10 @@ import net.minecraft.village.MerchantRecipeList;
 import net.minecraft.world.World;
 
 import com.marrybye.villagertradesbackport.compat.VillageNamesCompat;
-import com.marrybye.villagertradesbackport.mixins.AccessorEntityVillager;
 import com.marrybye.villagertradesbackport.mixins.AccessorMerchantRecipe;
 import com.marrybye.villagertradesbackport.network.ModNetwork;
+import com.marrybye.villagertradesbackport.trade.VillagerProfession;
+import com.marrybye.villagertradesbackport.trade.VillagerTradeManager;
 
 import io.netty.buffer.Unpooled;
 
@@ -29,10 +30,12 @@ public class ContainerVillager extends ContainerMerchant {
     private final IMerchant merchant;
     private final InventoryMerchant merchantInventory;
     private int[] lastSentUses;
+    private int lastSentXp = -1;
     private int villagerLevel = 1;
-    private int tierProgress = 0;
-    private int targetTrades = 4;
-    private int tierStartTrades = 0;
+    private int villagerXp = 0;
+    private int minXp = 0;
+    private int maxXp = 10;
+    private String professionTitle = "";
 
     public ContainerVillager(InventoryPlayer playerInv, IMerchant merchant, World world) {
         super(playerInv, merchant, world);
@@ -83,49 +86,70 @@ public class ContainerVillager extends ContainerMerchant {
         this.villagerLevel = villagerLevel;
     }
 
-    public int getTierProgress() {
-        return this.tierProgress;
+    public int getVillagerXp() {
+        return this.villagerXp;
     }
 
-    public void setTierProgress(int tierProgress) {
-        this.tierProgress = tierProgress;
+    public void setVillagerXp(int villagerXp) {
+        this.villagerXp = villagerXp;
+    }
+
+    public int getMinXp() {
+        return this.minXp;
+    }
+
+    public void setMinXp(int minXp) {
+        this.minXp = minXp;
+    }
+
+    public int getMaxXp() {
+        return this.maxXp;
+    }
+
+    public void setMaxXp(int maxXp) {
+        this.maxXp = maxXp;
+    }
+
+    public String getProfessionTitle() {
+        return this.professionTitle;
+    }
+
+    public void setProfessionTitle(String professionTitle) {
+        this.professionTitle = professionTitle;
+    }
+
+    public int getTierProgress() {
+        return Math.max(0, this.villagerXp - this.minXp);
     }
 
     public int getTargetTrades() {
-        return this.targetTrades;
-    }
-
-    public void setTargetTrades(int targetTrades) {
-        this.targetTrades = targetTrades;
+        return Math.max(1, this.maxXp - this.minXp);
     }
 
     public void updateProgressAndLevel() {
         MerchantRecipeList recipes = this.merchant.getRecipes(this.playerInv.player);
         if (this.merchant instanceof EntityVillager) {
             EntityVillager villager = (EntityVillager) this.merchant;
-            this.villagerLevel = VillageNamesCompat.getVillagerLevel(villager, recipes);
-            if (villager.getEntityData()
-                .hasKey("VTB_TierStartTrades")) {
-                this.tierStartTrades = villager.getEntityData()
-                    .getInteger("VTB_TierStartTrades");
+            if (VillagerTradeManager.isCustomizableVillager(villager)) {
+                this.villagerXp = VillagerTradeManager.getVillagerXp(villager);
+                this.villagerLevel = VillagerTradeManager.getLevelFromXp(this.villagerXp);
+                this.minXp = VillagerTradeManager.getMinXpForLevel(this.villagerLevel);
+                this.maxXp = VillagerTradeManager.getMaxXpForLevel(this.villagerLevel);
+                VillagerProfession prof = VillagerTradeManager.getProfession(villager);
+                this.professionTitle = (prof != null) ? prof.getTitle() : "";
             } else {
-                this.tierStartTrades = 0;
-                villager.getEntityData()
-                    .setInteger("VTB_TierStartTrades", 0);
+                this.villagerLevel = VillageNamesCompat.getVillagerLevel(villager, recipes);
+                this.villagerXp = 0;
+                this.minXp = 0;
+                this.maxXp = 10;
+                this.professionTitle = "";
             }
         } else {
             this.villagerLevel = VillageNamesCompat.getVillagerLevel(this.merchant, recipes);
-        }
-        this.targetTrades = getTargetTradesForLevel(this.villagerLevel);
-        if (recipes != null) {
-            int totalUses = 0;
-            for (int i = 0; i < recipes.size(); ++i) {
-                MerchantRecipe r = (MerchantRecipe) recipes.get(i);
-                totalUses += ((AccessorMerchantRecipe) r).getToolUses();
-            }
-            this.tierProgress = Math.max(0, totalUses - this.tierStartTrades);
-        } else {
-            this.tierProgress = 0;
+            this.villagerXp = 0;
+            this.minXp = 0;
+            this.maxXp = 10;
+            this.professionTitle = "";
         }
     }
 
@@ -140,22 +164,15 @@ public class ContainerVillager extends ContainerMerchant {
             }
         }
         this.lastSentUses = syncedUses;
-        ModNetwork.sendSyncTradeUses(playerMP, this.villagerLevel, this.tierProgress, this.targetTrades, syncedUses);
-    }
-
-    public static int getTargetTradesForLevel(int level) {
-        switch (level) {
-            case 1:
-                return 4;
-            case 2:
-                return 7;
-            case 3:
-                return 11;
-            case 4:
-                return 16;
-            default:
-                return 20;
-        }
+        this.lastSentXp = this.villagerXp;
+        ModNetwork.sendSyncTradeUses(
+            playerMP,
+            this.villagerLevel,
+            this.villagerXp,
+            this.minXp,
+            this.maxXp,
+            this.professionTitle,
+            syncedUses);
     }
 
     /**
@@ -255,12 +272,10 @@ public class ContainerVillager extends ContainerMerchant {
             MerchantRecipeList recipes = this.merchant.getRecipes(playerMP);
             if (recipes != null) {
                 int size = recipes.size();
-                int totalUses = 0;
                 int[] currentUses = new int[size];
                 for (int i = 0; i < size; ++i) {
                     MerchantRecipe r = (MerchantRecipe) recipes.get(i);
                     currentUses[i] = ((AccessorMerchantRecipe) r).getToolUses();
-                    totalUses += currentUses[i];
                 }
 
                 boolean sizeChanged = (this.lastSentUses == null || this.lastSentUses.length != size);
@@ -274,74 +289,8 @@ public class ContainerVillager extends ContainerMerchant {
                     }
                 }
 
-                if (this.merchant instanceof EntityVillager) {
-                    EntityVillager villager = (EntityVillager) this.merchant;
-                    AccessorEntityVillager acc = (AccessorEntityVillager) villager;
-
-                    if (this.villagerLevel <= 0) {
-                        this.villagerLevel = VillageNamesCompat.getVillagerLevel(villager, recipes);
-                    }
-                    this.targetTrades = getTargetTradesForLevel(this.villagerLevel);
-
-                    // Compute tier progress
-                    this.tierProgress = Math.max(0, totalUses - this.tierStartTrades);
-
-                    // Check if enough trades done to level up live in the open GUI!
-                    if (this.villagerLevel < 5 && this.tierProgress >= this.targetTrades) {
-                        this.villagerLevel++;
-                        this.tierStartTrades += this.targetTrades;
-                        this.tierProgress = Math.max(0, totalUses - this.tierStartTrades);
-                        this.targetTrades = getTargetTradesForLevel(this.villagerLevel);
-
-                        villager.getEntityData()
-                            .setInteger("VTB_TierStartTrades", this.tierStartTrades);
-                        VillageNamesCompat.syncVillagerLevel(villager, this.villagerLevel);
-
-                        // Restock any locked trades
-                        MerchantRecipeList buyList = acc.getBuyingList();
-                        if (buyList != null && buyList.size() > 1) {
-                            for (Object obj : (java.util.List<?>) buyList) {
-                                MerchantRecipe mr = (MerchantRecipe) obj;
-                                if (mr.isRecipeDisabled()) {
-                                    mr.func_82783_a(
-                                        villager.getRNG()
-                                            .nextInt(6)
-                                            + villager.getRNG()
-                                                .nextInt(6)
-                                            + 2);
-                                }
-                            }
-                        }
-
-                        // Generate and unlock new trade(s) for the new level
-                        acc.invokeAddDefaultEquipmentAndRecipies(1);
-                        acc.setNeedsInitilization(false);
-                        acc.setTimeUntilReset(0);
-
-                        // Play level-up effects (happy villager particles + level up sound)
-                        villager.worldObj.setEntityState(villager, (byte) 14);
-                        villager.worldObj.playSoundAtEntity(
-                            villager,
-                            "mob.villager.yes",
-                            1.0F,
-                            villager.isChild() ? (villager.getRNG()
-                                .nextFloat()
-                                - villager.getRNG()
-                                    .nextFloat())
-                                * 0.2F + 1.5F
-                                : (villager.getRNG()
-                                    .nextFloat()
-                                    - villager.getRNG()
-                                        .nextFloat())
-                                    * 0.2F + 1.0F);
-
-                        sizeChanged = true;
-                        usesChanged = true;
-                    }
-                } else {
-                    this.tierProgress = Math.max(0, totalUses - this.tierStartTrades);
-                    this.targetTrades = getTargetTradesForLevel(this.villagerLevel);
-                }
+                this.updateProgressAndLevel();
+                boolean xpChanged = (this.lastSentXp != this.villagerXp);
 
                 if (sizeChanged) {
                     try {
@@ -353,7 +302,7 @@ public class ContainerVillager extends ContainerMerchant {
                     } catch (Exception ignored) {}
                 }
 
-                if (sizeChanged || usesChanged) {
+                if (sizeChanged || usesChanged || xpChanged) {
                     this.sendSyncPacket(playerMP);
                 }
             }

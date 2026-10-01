@@ -8,7 +8,9 @@
   "mixins": [
     "AccessorEntityVillager",
     "AccessorMerchantRecipe",
-    "MixinEntityPlayerMP"
+    "MixinEntityPlayerMP",
+    "MixinEntityVillager",
+    "MixinMerchantRecipe"
   ],
   "client": [
     "AccessorGuiMerchant",

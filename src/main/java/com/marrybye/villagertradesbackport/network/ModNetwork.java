@@ -21,8 +21,8 @@ public class ModNetwork {
         INSTANCE.sendToServer(new PacketSelectTrade(tradeIndex));
     }
 
-    public static void sendSyncTradeUses(EntityPlayerMP player, int level, int tierProgress, int targetTrades,
-        int[] uses) {
-        INSTANCE.sendTo(new PacketSyncTradeUses(level, tierProgress, targetTrades, uses), player);
+    public static void sendSyncTradeUses(EntityPlayerMP player, int level, int xp, int minXp, int maxXp,
+        String professionTitle, int[] uses) {
+        INSTANCE.sendTo(new PacketSyncTradeUses(level, xp, minXp, maxXp, professionTitle, uses), player);
     }
 }

@@ -10,6 +10,7 @@ import com.marrybye.villagertradesbackport.container.ContainerVillager;
 import com.marrybye.villagertradesbackport.gui.GuiVillager;
 import com.marrybye.villagertradesbackport.mixins.AccessorMerchantRecipe;
 
+import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
@@ -20,24 +21,30 @@ import io.netty.buffer.ByteBuf;
 public class PacketSyncTradeUses implements IMessage {
 
     private int level;
-    private int tierProgress;
-    private int targetTrades;
+    private int xp;
+    private int minXp;
+    private int maxXp;
+    private String professionTitle;
     private int[] uses;
 
     public PacketSyncTradeUses() {}
 
-    public PacketSyncTradeUses(int level, int tierProgress, int targetTrades, int[] uses) {
+    public PacketSyncTradeUses(int level, int xp, int minXp, int maxXp, String professionTitle, int[] uses) {
         this.level = level;
-        this.tierProgress = tierProgress;
-        this.targetTrades = targetTrades;
+        this.xp = xp;
+        this.minXp = minXp;
+        this.maxXp = maxXp;
+        this.professionTitle = (professionTitle != null) ? professionTitle : "";
         this.uses = uses;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
         this.level = buf.readInt();
-        this.tierProgress = buf.readInt();
-        this.targetTrades = buf.readInt();
+        this.xp = buf.readInt();
+        this.minXp = buf.readInt();
+        this.maxXp = buf.readInt();
+        this.professionTitle = ByteBufUtils.readUTF8String(buf);
         int length = buf.readInt();
         this.uses = new int[length];
         for (int i = 0; i < length; ++i) {
@@ -48,8 +55,10 @@ public class PacketSyncTradeUses implements IMessage {
     @Override
     public void toBytes(ByteBuf buf) {
         buf.writeInt(this.level);
-        buf.writeInt(this.tierProgress);
-        buf.writeInt(this.targetTrades);
+        buf.writeInt(this.xp);
+        buf.writeInt(this.minXp);
+        buf.writeInt(this.maxXp);
+        ByteBufUtils.writeUTF8String(buf, this.professionTitle != null ? this.professionTitle : "");
         if (this.uses == null) {
             buf.writeInt(0);
         } else {
@@ -67,8 +76,10 @@ public class PacketSyncTradeUses implements IMessage {
             return;
         }
         container.setVillagerLevel(message.level);
-        container.setTierProgress(message.tierProgress);
-        container.setTargetTrades(message.targetTrades);
+        container.setVillagerXp(message.xp);
+        container.setMinXp(message.minXp);
+        container.setMaxXp(message.maxXp);
+        container.setProfessionTitle(message.professionTitle);
 
         if (message.uses != null && player != null) {
             IMerchant merchant = container.getMerchant();

@@ -86,13 +86,22 @@ public class GuiVillager extends GuiMerchant {
         int level = this.container.getVillagerLevel();
         String levelName = StatCollector.translateToLocal(LEVEL_KEYS[Math.max(0, Math.min(4, level - 1))]);
 
-        String displayName = this.titleText;
-        if (displayName == null || displayName.trim()
+        String fullTitle;
+        String profTitle = this.container.getProfessionTitle();
+        if (profTitle != null && !profTitle.trim()
             .isEmpty()) {
-            displayName = StatCollector.translateToLocal("entity.Villager.name");
+            String profKey = "entity.Villager." + profTitle.toLowerCase();
+            String profName = StatCollector.canTranslate(profKey) ? StatCollector.translateToLocal(profKey) : profTitle;
+            fullTitle = levelName + " " + profName;
+        } else {
+            String displayName = this.titleText;
+            if (displayName == null || displayName.trim()
+                .isEmpty()) {
+                displayName = StatCollector.translateToLocal("entity.Villager.name");
+            }
+            fullTitle = displayName + " - " + levelName;
         }
 
-        String fullTitle = displayName + " - " + levelName;
         int titleWidth = this.fontRendererObj.getStringWidth(fullTitle);
         // Center above XP bar (XP bar is at x=136 with width=102, center=187)
         int titleX = Math.max(105, 136 + (102 - titleWidth) / 2);
@@ -136,9 +145,12 @@ public class GuiVillager extends GuiMerchant {
         if (level >= 5) {
             currentProgressWidth = 102;
         } else {
-            int progress = this.container.getTierProgress();
-            int target = this.container.getTargetTrades();
-            float ratio = (target > 0) ? Math.min(1.0F, (float) progress / (float) target) : 0.0F;
+            int xp = this.container.getVillagerXp();
+            int minXp = this.container.getMinXp();
+            int maxXp = this.container.getMaxXp();
+            float ratio = (maxXp > minXp)
+                ? Math.min(1.0F, Math.max(0.0F, (float) (xp - minXp) / (float) (maxXp - minXp)))
+                : 0.0F;
             currentProgressWidth = (int) (ratio * 102.0F);
         }
 
@@ -286,15 +298,17 @@ public class GuiVillager extends GuiMerchant {
             + StatCollector.translateToLocal("container.villagertrades.villager_xp");
         text.add(title);
 
+        int xp = this.container.getVillagerXp();
+        int maxXp = this.container.getMaxXp();
+
         if (level >= 5) {
-            text.add(EnumChatFormatting.GRAY + StatCollector.translateToLocal("container.villagertrades.max_level"));
-        } else {
             text.add(
-                EnumChatFormatting.GRAY.toString() + this.container.getTierProgress()
-                    + " / "
-                    + this.container.getTargetTrades()
-                    + " "
-                    + StatCollector.translateToLocal("container.villagertrades.trades_count"));
+                EnumChatFormatting.GRAY + StatCollector.translateToLocal("container.villagertrades.max_level")
+                    + " ("
+                    + xp
+                    + " XP)");
+        } else {
+            text.add(EnumChatFormatting.GRAY.toString() + xp + " / " + maxXp + " XP");
         }
 
         this.drawHoveringText(text, mouseX, mouseY, this.fontRendererObj);

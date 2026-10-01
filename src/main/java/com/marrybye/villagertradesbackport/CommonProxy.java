@@ -18,7 +18,10 @@ public class CommonProxy {
     }
 
     // load "Do your mod setup. Build whatever data structures you care about. Register recipes." (Remove if not needed)
-    public void init(FMLInitializationEvent event) {}
+    public void init(FMLInitializationEvent event) {
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS
+            .register(new com.marrybye.villagertradesbackport.event.VillagerEventHandler());
+    }
 
     // postInit "Handle interaction with other mods, complete your setup based on this." (Remove if not needed)
     public void postInit(FMLPostInitializationEvent event) {}
