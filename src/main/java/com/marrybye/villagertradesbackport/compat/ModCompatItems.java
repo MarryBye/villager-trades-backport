@@ -120,4 +120,24 @@ public class ModCompatItems {
     public static ItemStack getPolishedAndesite(int count) {
         return getItemStack("etfuturum", "polished_andesite", count, 0, new ItemStack(Blocks.stone, count));
     }
+
+    public static ItemStack getBeetroot(int count) {
+        return getItemStack("etfuturum", "beetroot", count, 0, new ItemStack(Items.carrot, count));
+    }
+
+    public static ItemStack getLeatherHorseArmor(int count) {
+        return getItemStack("etfuturum", "leather_horse_armor", count, 0, new ItemStack(Items.lead, 2));
+    }
+
+    public static ItemStack getTippedArrow(int count) {
+        ItemStack tipped = getItemStack("etfuturum", "tipped_arrow", count, 0, null);
+        if (tipped != null) {
+            return tipped;
+        }
+        return new ItemStack(Items.arrow, count);
+    }
+
+    public static ItemStack getScute(int count) {
+        return getItemStack("etfuturum", "scute", count, 0, new ItemStack(Items.leather, count));
+    }
 }

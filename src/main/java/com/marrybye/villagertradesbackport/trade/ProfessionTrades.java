@@ -152,7 +152,11 @@ public class ProfessionTrades {
         add(
             VillagerProfession.BUTCHER,
             4,
-            create(new ItemStack(Items.coal, 10), new ItemStack(Items.emerald), 12, 30, 0.05F));
+            create(new ItemStack(Items.emerald), new ItemStack(Items.cooked_beef, 5), 16, 15, 0.05F));
+        add(
+            VillagerProfession.BUTCHER,
+            4,
+            create(new ItemStack(Items.emerald), ModCompatItems.getCookedMutton(5), 16, 15, 0.05F));
         // Master
         add(
             VillagerProfession.BUTCHER,
@@ -177,10 +181,10 @@ public class ProfessionTrades {
         add(
             VillagerProfession.CARTOGRAPHER,
             2,
-            create(
+            customNamedMap(
                 new ItemStack(Items.emerald, 8),
                 new ItemStack(Items.compass),
-                new ItemStack(Items.map),
+                "Ocean Explorer Map",
                 12,
                 5,
                 0.2F));
@@ -192,10 +196,10 @@ public class ProfessionTrades {
         add(
             VillagerProfession.CARTOGRAPHER,
             3,
-            create(
+            customNamedMap(
                 new ItemStack(Items.emerald, 13),
                 new ItemStack(Items.compass),
-                new ItemStack(Items.map),
+                "Ocean Monument Map",
                 12,
                 10,
                 0.2F));
@@ -216,10 +220,10 @@ public class ProfessionTrades {
         add(
             VillagerProfession.CARTOGRAPHER,
             5,
-            create(
+            customNamedMap(
                 new ItemStack(Items.emerald, 14),
                 new ItemStack(Items.compass),
-                new ItemStack(Items.map),
+                "Woodland Mansion Map",
                 12,
                 30,
                 0.2F));
@@ -256,6 +260,10 @@ public class ProfessionTrades {
         add(
             VillagerProfession.CLERIC,
             4,
+            create(ModCompatItems.getScute(4), new ItemStack(Items.emerald), 12, 30, 0.05F));
+        add(
+            VillagerProfession.CLERIC,
+            4,
             create(new ItemStack(Items.glass_bottle, 9), new ItemStack(Items.emerald), 12, 30, 0.05F));
         add(
             VillagerProfession.CLERIC,
@@ -285,6 +293,10 @@ public class ProfessionTrades {
             VillagerProfession.FARMER,
             1,
             create(new ItemStack(Items.carrot, 22), new ItemStack(Items.emerald), 16, 2, 0.05F));
+        add(
+            VillagerProfession.FARMER,
+            1,
+            create(ModCompatItems.getBeetroot(15), new ItemStack(Items.emerald), 16, 2, 0.05F));
         add(
             VillagerProfession.FARMER,
             1,
@@ -443,14 +455,14 @@ public class ProfessionTrades {
             VillagerProfession.FLETCHER,
             5,
             create(new ItemStack(Blocks.tripwire_hook, 8), new ItemStack(Items.emerald), 12, 30, 0.05F));
-        add(VillagerProfession.FLETCHER, 5, enchantedGear(8, 22, Items.bow, 20, 39, 3, 15, 0.2F));
+        add(VillagerProfession.FLETCHER, 5, enchantedGear(8, 22, ModCompatItems.getCrossbow(1), 20, 39, 3, 15, 0.2F));
         add(
             VillagerProfession.FLETCHER,
             5,
             create(
                 new ItemStack(Items.emerald, 2),
                 new ItemStack(Items.arrow, 5),
-                new ItemStack(Items.arrow, 5),
+                ModCompatItems.getTippedArrow(5),
                 12,
                 30,
                 0.05F));
@@ -461,54 +473,35 @@ public class ProfessionTrades {
             VillagerProfession.LEATHERWORKER,
             1,
             create(new ItemStack(Items.leather, 6), new ItemStack(Items.emerald), 16, 2, 0.05F));
-        add(
-            VillagerProfession.LEATHERWORKER,
-            1,
-            create(new ItemStack(Items.emerald, 3), new ItemStack(Items.leather_leggings), 12, 1, 0.2F));
-        add(
-            VillagerProfession.LEATHERWORKER,
-            1,
-            create(new ItemStack(Items.emerald, 7), new ItemStack(Items.leather_chestplate), 12, 1, 0.2F));
+        add(VillagerProfession.LEATHERWORKER, 1, dyedLeatherGear(3, Items.leather_leggings, 12, 1, 0.2F));
+        add(VillagerProfession.LEATHERWORKER, 1, dyedLeatherGear(4, Items.leather_boots, 12, 1, 0.2F));
         // Apprentice
         add(
             VillagerProfession.LEATHERWORKER,
             2,
             create(new ItemStack(Items.flint, 26), new ItemStack(Items.emerald), 12, 10, 0.05F));
-        add(
-            VillagerProfession.LEATHERWORKER,
-            2,
-            create(new ItemStack(Items.emerald, 5), new ItemStack(Items.leather_helmet), 12, 5, 0.2F));
-        add(
-            VillagerProfession.LEATHERWORKER,
-            2,
-            create(new ItemStack(Items.emerald, 4), new ItemStack(Items.leather_boots), 12, 5, 0.2F));
+        add(VillagerProfession.LEATHERWORKER, 2, dyedLeatherGear(5, Items.leather_helmet, 12, 5, 0.2F));
         // Journeyman
         add(
             VillagerProfession.LEATHERWORKER,
             3,
             create(ModCompatItems.getRabbitHide(9), new ItemStack(Items.emerald), 12, 20, 0.05F));
-        add(
-            VillagerProfession.LEATHERWORKER,
-            3,
-            create(new ItemStack(Items.emerald, 7), new ItemStack(Items.leather_chestplate), 12, 10, 0.2F));
+        add(VillagerProfession.LEATHERWORKER, 3, dyedLeatherGear(7, Items.leather_chestplate, 12, 10, 0.2F));
         // Expert
         add(
             VillagerProfession.LEATHERWORKER,
             4,
-            create(new ItemStack(Items.leather, 4), new ItemStack(Items.emerald), 12, 30, 0.05F));
+            create(ModCompatItems.getScute(4), new ItemStack(Items.emerald), 12, 30, 0.05F));
         add(
             VillagerProfession.LEATHERWORKER,
             4,
-            create(new ItemStack(Items.emerald, 6), new ItemStack(Items.saddle), 12, 15, 0.2F));
+            create(new ItemStack(Items.emerald, 6), ModCompatItems.getLeatherHorseArmor(1), 12, 15, 0.2F));
         // Master
         add(
             VillagerProfession.LEATHERWORKER,
             5,
-            create(new ItemStack(Items.emerald, 5), new ItemStack(Items.leather_helmet), 12, 30, 0.2F));
-        add(
-            VillagerProfession.LEATHERWORKER,
-            5,
             create(new ItemStack(Items.emerald, 6), new ItemStack(Items.saddle), 12, 30, 0.2F));
+        add(VillagerProfession.LEATHERWORKER, 5, dyedLeatherGear(5, Items.leather_helmet, 12, 30, 0.2F));
 
         // --- LIBRARIAN ---
         // Novice
@@ -793,6 +786,11 @@ public class ProfessionTrades {
 
     public static List<MerchantRecipe> generateTradesForTier(VillagerProfession prof, int level, Random random,
         int count) {
+        return generateTradesForTier(prof, level, random, count, null);
+    }
+
+    public static List<MerchantRecipe> generateTradesForTier(VillagerProfession prof, int level, Random random,
+        int count, List<?> existingTrades) {
         if (prof == null || prof == VillagerProfession.NITWIT) {
             return Collections.emptyList();
         }
@@ -804,12 +802,24 @@ public class ProfessionTrades {
         List<ITradeGenerator> shuffled = new ArrayList<>(pool);
         Collections.shuffle(shuffled, random);
 
-        int toSelect = Math.min(count, shuffled.size());
-        List<MerchantRecipe> result = new ArrayList<>(toSelect);
-        for (int i = 0; i < toSelect; i++) {
-            result.add(
-                shuffled.get(i)
-                    .generate(random));
+        List<MerchantRecipe> result = new ArrayList<>(count);
+        for (ITradeGenerator gen : shuffled) {
+            if (result.size() >= count) break;
+
+            MerchantRecipe candidate = null;
+            for (int attempt = 0; attempt < 8; attempt++) {
+                MerchantRecipe testRecipe = gen.generate(random);
+                if (testRecipe == null) continue;
+                if (!VillagerTradeManager.isRecipeDuplicateOfAny(existingTrades, testRecipe)
+                    && !VillagerTradeManager.isRecipeDuplicateOfAny(result, testRecipe)) {
+                    candidate = testRecipe;
+                    break;
+                }
+            }
+
+            if (candidate != null) {
+                result.add(candidate);
+            }
         }
         return result;
     }

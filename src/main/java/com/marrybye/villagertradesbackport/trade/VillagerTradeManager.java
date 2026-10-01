@@ -6,7 +6,10 @@ import net.minecraft.block.Block;
 import net.minecraft.entity.item.EntityXPOrb;
 import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.MathHelper;
 import net.minecraft.village.MerchantRecipe;
 import net.minecraft.village.MerchantRecipeList;
@@ -171,7 +174,7 @@ public class VillagerTradeManager {
         }
 
         MerchantRecipeList list = new MerchantRecipeList();
-        List<MerchantRecipe> tier1Trades = ProfessionTrades.generateTradesForTier(prof, 1, villager.getRNG(), 2);
+        List<MerchantRecipe> tier1Trades = ProfessionTrades.generateTradesForTier(prof, 1, villager.getRNG(), 2, list);
         for (MerchantRecipe r : tier1Trades) {
             list.add(r);
         }
@@ -234,9 +237,10 @@ public class VillagerTradeManager {
         // Restock all existing trades immediately upon leveling up
         restockAllTrades(buyList);
 
-        // Unlock 2 trades for each newly reached tier
+        // Unlock trades for each newly reached tier without duplicates
         for (int lvl = fromLevel + 1; lvl <= toLevel; lvl++) {
-            List<MerchantRecipe> newTrades = ProfessionTrades.generateTradesForTier(prof, lvl, villager.getRNG(), 2);
+            List<MerchantRecipe> newTrades = ProfessionTrades
+                .generateTradesForTier(prof, lvl, villager.getRNG(), 2, buyList);
             for (MerchantRecipe r : newTrades) {
                 buyList.add(r);
             }
@@ -271,6 +275,110 @@ public class VillagerTradeManager {
                 ((AccessorMerchantRecipe) mr).setToolUses(0);
             }
         }
+    }
+
+    public static boolean isRecipeDuplicate(MerchantRecipe existing, MerchantRecipe candidate) {
+        if (existing == null || candidate == null) return false;
+
+        ItemStack existingSell = existing.getItemToSell();
+        ItemStack candidateSell = candidate.getItemToSell();
+        ItemStack existingBuy1 = existing.getItemToBuy();
+        ItemStack candidateBuy1 = candidate.getItemToBuy();
+        ItemStack existingBuy2 = existing.getSecondItemToBuy();
+        ItemStack candidateBuy2 = candidate.getSecondItemToBuy();
+
+        if (existingSell == null || candidateSell == null || existingBuy1 == null || candidateBuy1 == null) {
+            return false;
+        }
+
+        // 1. Exact match on buy and sell stacks
+        if (ItemStack.areItemStacksEqual(existingSell, candidateSell)
+            && ItemStack.areItemStacksEqual(existingBuy1, candidateBuy1)
+            && areItemStacksEqualOrNull(existingBuy2, candidateBuy2)) {
+            return true;
+        }
+
+        // 2. Both are sell-trades (player pays emeralds/items to get a product)
+        if (existingSell.getItem() == candidateSell.getItem()) {
+            if (existingSell.getItem() == Items.enchanted_book) {
+                if (areEnchantedBooksEquivalent(existingSell, candidateSell)) {
+                    return true;
+                }
+            } else if (existingSell.getItem() == Items.map) {
+                String n1 = existingSell.getDisplayName();
+                String n2 = candidateSell.getDisplayName();
+                if (n1 != null && n1.equals(n2)) {
+                    return true;
+                }
+            } else if (existingSell.isItemStackDamageable()) {
+                // If both are unenchanted: selling the same gear item is duplicate
+                if (!existingSell.isItemEnchanted() && !candidateSell.isItemEnchanted()) {
+                    return true;
+                }
+                // If both are enchanted: compare enchantment lists
+                if (existingSell.isItemEnchanted() && candidateSell.isItemEnchanted()) {
+                    if (areEnchantmentTagsEqual(existingSell, candidateSell)) {
+                        return true;
+                    }
+                }
+            } else {
+                if (existingSell.getItemDamage() == candidateSell.getItemDamage()) {
+                    return true;
+                }
+            }
+        }
+
+        // 3. Both are buy-trades (villager buys resources for emeralds)
+        if (existingSell.getItem() == Items.emerald && candidateSell.getItem() == Items.emerald) {
+            if (existingBuy1.getItem() == candidateBuy1.getItem()
+                && existingBuy1.getItemDamage() == candidateBuy1.getItemDamage()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean areItemStacksEqualOrNull(ItemStack a, ItemStack b) {
+        if (a == null && b == null) return true;
+        if (a == null || b == null) return false;
+        return ItemStack.areItemStacksEqual(a, b);
+    }
+
+    public static boolean areEnchantedBooksEquivalent(ItemStack b1, ItemStack b2) {
+        if (b1 == null || b2 == null) return false;
+        NBTTagCompound tag1 = b1.getTagCompound();
+        NBTTagCompound tag2 = b2.getTagCompound();
+        if (tag1 == null || tag2 == null) return tag1 == tag2;
+        NBTTagList list1 = tag1.getTagList("StoredEnchantments", 10);
+        NBTTagList list2 = tag2.getTagList("StoredEnchantments", 10);
+        if (list1.tagCount() == 0 || list2.tagCount() == 0) return false;
+
+        NBTTagCompound ench1 = list1.getCompoundTagAt(0);
+        NBTTagCompound ench2 = list2.getCompoundTagAt(0);
+        return ench1.getShort("id") == ench2.getShort("id");
+    }
+
+    public static boolean areEnchantmentTagsEqual(ItemStack i1, ItemStack i2) {
+        if (i1 == null || i2 == null) return false;
+        NBTTagCompound tag1 = i1.getTagCompound();
+        NBTTagCompound tag2 = i2.getTagCompound();
+        if (tag1 == null || tag2 == null) return tag1 == tag2;
+        NBTTagList list1 = tag1.getTagList("ench", 10);
+        NBTTagList list2 = tag2.getTagList("ench", 10);
+        return list1.equals(list2);
+    }
+
+    public static boolean isRecipeDuplicateOfAny(List<?> list, MerchantRecipe candidate) {
+        if (list == null || candidate == null) return false;
+        for (Object obj : list) {
+            if (obj instanceof MerchantRecipe) {
+                if (isRecipeDuplicate((MerchantRecipe) obj, candidate)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
