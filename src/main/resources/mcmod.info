@@ -13,8 +13,8 @@
 		"logoFile": "logo.png",
 		"screenshots": [],
 		"parent": "",
-		"requiredMods": ["UniMixins", "gtnhlib", "etfuturum"],
-		"dependencies": ["UniMixins", "gtnhlib", "etfuturum", "VillageNames"],
+		"requiredMods": ["gtnhlib", "etfuturum"],
+		"dependencies": ["gtnhlib", "etfuturum", "VillageNames"],
 		"dependants": [],
 		"useDependencyInformation": true
 	}]

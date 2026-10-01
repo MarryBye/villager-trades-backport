@@ -15,7 +15,7 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
     version = Tags.VERSION,
     name = "Villager Trades Backport",
     acceptedMinecraftVersions = "[1.7.10]",
-    dependencies = "required-after:UniMixins;required-after:gtnhlib;required-after:etfuturum;after:VillageNames")
+    dependencies = "required-after:gtnhlib;required-after:etfuturum;after:VillageNames")
 public class VillagerTradesBackport {
 
     public static final String MODID = "villagertradesbackport";
