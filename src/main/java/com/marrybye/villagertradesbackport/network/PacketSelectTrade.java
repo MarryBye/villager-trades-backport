@@ -37,10 +37,13 @@ public class PacketSelectTrade implements IMessage {
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
             if (player != null && player.openContainer instanceof ContainerMerchant) {
                 ContainerMerchant container = (ContainerMerchant) player.openContainer;
-                container.setCurrentRecipeIndex(message.tradeIndex);
-
-                if (container instanceof ContainerVillager) {
-                    ((ContainerVillager) container).moveAroundItems(message.tradeIndex);
+                if (message.tradeIndex >= 0) {
+                    container.setCurrentRecipeIndex(message.tradeIndex);
+                    if (container instanceof ContainerVillager) {
+                        ((ContainerVillager) container).moveAroundItems(message.tradeIndex);
+                    }
+                } else if (container instanceof ContainerVillager) {
+                    ((ContainerVillager) container).sendSyncPacket(player);
                 }
             }
             return null;

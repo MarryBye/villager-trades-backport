@@ -7,6 +7,7 @@ import net.minecraft.village.MerchantRecipe;
 import net.minecraft.village.MerchantRecipeList;
 
 import com.marrybye.villagertradesbackport.container.ContainerVillager;
+import com.marrybye.villagertradesbackport.gui.GuiVillager;
 import com.marrybye.villagertradesbackport.mixins.AccessorMerchantRecipe;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -59,30 +60,46 @@ public class PacketSyncTradeUses implements IMessage {
         }
     }
 
+    public static PacketSyncTradeUses lastReceivedSync;
+
+    public static void applySync(PacketSyncTradeUses message, ContainerVillager container, EntityPlayer player) {
+        if (message == null || container == null) {
+            return;
+        }
+        container.setVillagerLevel(message.level);
+        container.setTierProgress(message.tierProgress);
+        container.setTargetTrades(message.targetTrades);
+
+        if (message.uses != null && player != null) {
+            IMerchant merchant = container.getMerchant();
+            if (merchant != null) {
+                MerchantRecipeList recipes = merchant.getRecipes(player);
+                if (recipes != null) {
+                    for (int i = 0; i < Math.min(recipes.size(), message.uses.length); ++i) {
+                        MerchantRecipe recipe = (MerchantRecipe) recipes.get(i);
+                        ((AccessorMerchantRecipe) recipe).setToolUses(message.uses[i]);
+                    }
+                }
+            }
+        }
+    }
+
     public static class Handler implements IMessageHandler<PacketSyncTradeUses, IMessage> {
 
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketSyncTradeUses message, MessageContext ctx) {
+            lastReceivedSync = message;
             EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+            ContainerVillager container = null;
             if (player != null && player.openContainer instanceof ContainerVillager) {
-                ContainerVillager container = (ContainerVillager) player.openContainer;
-                container.setVillagerLevel(message.level);
-                container.setTierProgress(message.tierProgress);
-                container.setTargetTrades(message.targetTrades);
+                container = (ContainerVillager) player.openContainer;
+            } else if (Minecraft.getMinecraft().currentScreen instanceof GuiVillager) {
+                container = ((GuiVillager) Minecraft.getMinecraft().currentScreen).getContainer();
+            }
 
-                if (message.uses != null) {
-                    IMerchant merchant = container.getMerchant();
-                    if (merchant != null) {
-                        MerchantRecipeList recipes = merchant.getRecipes(player);
-                        if (recipes != null) {
-                            for (int i = 0; i < Math.min(recipes.size(), message.uses.length); ++i) {
-                                MerchantRecipe recipe = (MerchantRecipe) recipes.get(i);
-                                ((AccessorMerchantRecipe) recipe).setToolUses(message.uses[i]);
-                            }
-                        }
-                    }
-                }
+            if (container != null) {
+                applySync(message, container, player);
             }
             return null;
         }

@@ -19,10 +19,10 @@ import net.minecraft.village.MerchantRecipeList;
 
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 
 import com.marrybye.villagertradesbackport.container.ContainerVillager;
 import com.marrybye.villagertradesbackport.network.ModNetwork;
+import com.marrybye.villagertradesbackport.network.PacketSyncTradeUses;
 
 public class GuiVillager extends GuiMerchant {
 
@@ -52,11 +52,20 @@ public class GuiVillager extends GuiMerchant {
         this.ySize = 166;
     }
 
+    public ContainerVillager getContainer() {
+        return this.container;
+    }
+
     @Override
     public void initGui() {
         this.mc.thePlayer.openContainer = this.inventorySlots;
         this.guiLeft = (this.width - this.xSize) / 2;
         this.guiTop = (this.height - this.ySize) / 2;
+
+        if (PacketSyncTradeUses.lastReceivedSync != null) {
+            PacketSyncTradeUses.applySync(PacketSyncTradeUses.lastReceivedSync, this.container, this.mc.thePlayer);
+        }
+        ModNetwork.sendSelectTrade(-1);
 
         this.buttonList.clear();
 
@@ -107,6 +116,8 @@ public class GuiVillager extends GuiMerchant {
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+        RenderHelper.disableStandardItemLighting();
+        GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
         this.mc.getTextureManager()
             .bindTexture(TEXTURE);
@@ -193,12 +204,10 @@ public class GuiVillager extends GuiMerchant {
             int cost1X = startX + 5 + 5;
 
             GL11.glPushMatrix();
-            GL11.glEnable(GL12.GL_RESCALE_NORMAL);
-            RenderHelper.enableGUIStandardItemLighting();
+            GL11.glDisable(GL11.GL_LIGHTING);
+            RenderHelper.disableStandardItemLighting();
             GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 
-            this.mc.getTextureManager()
-                .bindTexture(TEXTURE);
             this.renderScrollBar(startX, startY, trades);
 
             int tradeDisplayCount = 0;
@@ -248,9 +257,9 @@ public class GuiVillager extends GuiMerchant {
             }
 
             GL11.glPopMatrix();
-            GL11.glEnable(GL11.GL_DEPTH_TEST);
-            GL11.glEnable(GL11.GL_LIGHTING);
-            RenderHelper.enableStandardItemLighting();
+            GL11.glDisable(GL11.GL_LIGHTING);
+            RenderHelper.disableStandardItemLighting();
+            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 
             // Render tooltip for hovered item in trades list
             if (hoveredTradeButton != null) {
@@ -264,6 +273,10 @@ public class GuiVillager extends GuiMerchant {
             && mouseY <= this.guiTop + 16 + 5) {
             this.renderXpTooltip(mouseX, mouseY, trades);
         }
+
+        GL11.glDisable(GL11.GL_LIGHTING);
+        RenderHelper.disableStandardItemLighting();
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     private void renderXpTooltip(int mouseX, int mouseY, MerchantRecipeList trades) {
@@ -288,6 +301,13 @@ public class GuiVillager extends GuiMerchant {
     }
 
     private void renderScrollBar(int x, int y, MerchantRecipeList trades) {
+        GL11.glDisable(GL11.GL_LIGHTING);
+        RenderHelper.disableStandardItemLighting();
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glEnable(GL11.GL_BLEND);
+        this.mc.getTextureManager()
+            .bindTexture(TEXTURE);
+
         int i = trades.size() + 1 - 7;
         if (i > 1) {
             int j = 139 - (27 + (i - 1) * 139 / i);
@@ -304,12 +324,21 @@ public class GuiVillager extends GuiMerchant {
 
     private void renderTradeItem(ItemStack stack, int x, int y) {
         if (stack != null) {
+            GL11.glPushMatrix();
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
+            RenderHelper.enableGUIStandardItemLighting();
             itemRender.renderItemAndEffectIntoGUI(this.fontRendererObj, this.mc.getTextureManager(), stack, x, y);
             itemRender.renderItemOverlayIntoGUI(this.fontRendererObj, this.mc.getTextureManager(), stack, x, y);
+            RenderHelper.disableStandardItemLighting();
+            GL11.glDisable(GL11.GL_LIGHTING);
+            GL11.glPopMatrix();
         }
     }
 
     private void renderArrow(MerchantRecipe trade, int x, int y) {
+        GL11.glDisable(GL11.GL_LIGHTING);
+        RenderHelper.disableStandardItemLighting();
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
         GL11.glEnable(GL11.GL_BLEND);
         this.mc.getTextureManager()
             .bindTexture(TEXTURE);
@@ -395,6 +424,10 @@ public class GuiVillager extends GuiMerchant {
         float minV = v / texHeight;
         float maxV = (v + height) / texHeight;
 
+        GL11.glDisable(GL11.GL_LIGHTING);
+        RenderHelper.disableStandardItemLighting();
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
         tessellator.addVertexWithUV((double) x, (double) (y + height), zLevel, (double) minU, (double) maxV);
@@ -407,13 +440,17 @@ public class GuiVillager extends GuiMerchant {
     public class TradeButton extends GuiButton {
 
         public TradeButton(int id, int x, int y) {
-            super(id, x, y, 89, 20, "");
+            super(id, x, y, 88, 20, "");
             this.visible = false;
         }
 
         @Override
         public void drawButton(Minecraft mc, int mouseX, int mouseY) {
             if (this.visible) {
+                GL11.glDisable(GL11.GL_LIGHTING);
+                RenderHelper.disableStandardItemLighting();
+                GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+
                 super.drawButton(mc, mouseX, mouseY);
 
                 int tradeIndex = this.id + scrollOffset;
@@ -431,6 +468,7 @@ public class GuiVillager extends GuiMerchant {
                     drawRect(x1, y2 - 1, x2, y2, color);
                     drawRect(x1, y1 + 1, x1 + 1, y2 - 1, color);
                     drawRect(x2 - 1, y1 + 1, x2, y2 - 1, color);
+                    GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
                 }
             }
         }

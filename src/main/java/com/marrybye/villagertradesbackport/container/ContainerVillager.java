@@ -39,20 +39,7 @@ public class ContainerVillager extends ContainerMerchant {
         this.playerInv = playerInv;
         this.merchant = merchant;
         this.merchantInventory = this.getMerchantInventory();
-        this.villagerLevel = VillageNamesCompat.getVillagerLevel(merchant, merchant.getRecipes(playerInv.player));
-        this.targetTrades = getTargetTradesForLevel(this.villagerLevel);
-        if (merchant instanceof EntityVillager) {
-            EntityVillager villager = (EntityVillager) merchant;
-            if (villager.getEntityData()
-                .hasKey("VTB_TierStartTrades")) {
-                this.tierStartTrades = villager.getEntityData()
-                    .getInteger("VTB_TierStartTrades");
-            } else {
-                this.tierStartTrades = 0;
-                villager.getEntityData()
-                    .setInteger("VTB_TierStartTrades", 0);
-            }
-        }
+        this.updateProgressAndLevel();
 
         // Clear default 176px slot layout from vanilla ContainerMerchant
         this.inventorySlots.clear();
@@ -110,6 +97,50 @@ public class ContainerVillager extends ContainerMerchant {
 
     public void setTargetTrades(int targetTrades) {
         this.targetTrades = targetTrades;
+    }
+
+    public void updateProgressAndLevel() {
+        MerchantRecipeList recipes = this.merchant.getRecipes(this.playerInv.player);
+        if (this.merchant instanceof EntityVillager) {
+            EntityVillager villager = (EntityVillager) this.merchant;
+            this.villagerLevel = VillageNamesCompat.getVillagerLevel(villager, recipes);
+            if (villager.getEntityData()
+                .hasKey("VTB_TierStartTrades")) {
+                this.tierStartTrades = villager.getEntityData()
+                    .getInteger("VTB_TierStartTrades");
+            } else {
+                this.tierStartTrades = 0;
+                villager.getEntityData()
+                    .setInteger("VTB_TierStartTrades", 0);
+            }
+        } else {
+            this.villagerLevel = VillageNamesCompat.getVillagerLevel(this.merchant, recipes);
+        }
+        this.targetTrades = getTargetTradesForLevel(this.villagerLevel);
+        if (recipes != null) {
+            int totalUses = 0;
+            for (int i = 0; i < recipes.size(); ++i) {
+                MerchantRecipe r = (MerchantRecipe) recipes.get(i);
+                totalUses += ((AccessorMerchantRecipe) r).getToolUses();
+            }
+            this.tierProgress = Math.max(0, totalUses - this.tierStartTrades);
+        } else {
+            this.tierProgress = 0;
+        }
+    }
+
+    public void sendSyncPacket(EntityPlayerMP playerMP) {
+        this.updateProgressAndLevel();
+        MerchantRecipeList recipes = this.merchant.getRecipes(playerMP);
+        int[] syncedUses = null;
+        if (recipes != null) {
+            syncedUses = new int[recipes.size()];
+            for (int i = 0; i < recipes.size(); ++i) {
+                syncedUses[i] = ((AccessorMerchantRecipe) recipes.get(i)).getToolUses();
+            }
+        }
+        this.lastSentUses = syncedUses;
+        ModNetwork.sendSyncTradeUses(playerMP, this.villagerLevel, this.tierProgress, this.targetTrades, syncedUses);
     }
 
     public static int getTargetTradesForLevel(int level) {
@@ -323,18 +354,7 @@ public class ContainerVillager extends ContainerMerchant {
                 }
 
                 if (sizeChanged || usesChanged) {
-                    int currentSize = recipes.size();
-                    int[] syncedUses = new int[currentSize];
-                    for (int i = 0; i < currentSize; ++i) {
-                        syncedUses[i] = ((AccessorMerchantRecipe) recipes.get(i)).getToolUses();
-                    }
-                    this.lastSentUses = syncedUses;
-                    ModNetwork.sendSyncTradeUses(
-                        playerMP,
-                        this.villagerLevel,
-                        this.tierProgress,
-                        this.targetTrades,
-                        syncedUses);
+                    this.sendSyncPacket(playerMP);
                 }
             }
         }
