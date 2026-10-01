@@ -27,7 +27,7 @@ public abstract class MixinExtendedVillager {
         if (this.villager != null && VillagerTradeManager.isCustomizableVillager(this.villager)) {
             VillagerProfession prof = VillagerTradeManager.getProfession(this.villager);
             if (prof == null || this.career <= 0) {
-                cir.setReturnValue(-1);
+                cir.setReturnValue(VillagerTradeManager.UNEMPLOYED_PROFESSION_ID);
             }
         }
     }

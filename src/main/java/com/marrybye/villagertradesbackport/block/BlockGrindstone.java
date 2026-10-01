@@ -20,11 +20,15 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class BlockGrindstone extends Block {
 
     @SideOnly(Side.CLIENT)
-    private IIcon roundIcon;
+    public IIcon roundIcon;
     @SideOnly(Side.CLIENT)
-    private IIcon sideIcon;
+    public IIcon sideIcon;
     @SideOnly(Side.CLIENT)
-    private IIcon pivotIcon;
+    public IIcon pivotIcon;
+    @SideOnly(Side.CLIENT)
+    public IIcon legIcon;
+
+    private int renderId;
 
     public BlockGrindstone() {
         super(Material.iron);
@@ -33,7 +37,16 @@ public class BlockGrindstone extends Block {
         this.setStepSound(soundTypeAnvil);
         this.setBlockName("villagertradesbackport.grindstone");
         this.setCreativeTab(CreativeTabs.tabDecorations);
-        this.setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 0.8125F, 0.875F);
+        this.setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1.0F, 0.875F);
+    }
+
+    public void setRenderId(int id) {
+        this.renderId = id;
+    }
+
+    @Override
+    public int getRenderType() {
+        return this.renderId;
     }
 
     @Override
@@ -67,10 +80,13 @@ public class BlockGrindstone extends Block {
     @SideOnly(Side.CLIENT)
     @Override
     public IIcon getIcon(int side, int meta) {
-        if (side == 1) return roundIcon;
-        if (side == 0) return pivotIcon;
-        if (side == meta || side == (meta ^ 1)) return pivotIcon;
-        return sideIcon;
+        if (meta == 4 || meta == 5) {
+            if (side == 2 || side == 3) return sideIcon;
+            return roundIcon;
+        } else {
+            if (side == 4 || side == 5) return sideIcon;
+            return roundIcon;
+        }
     }
 
     @SideOnly(Side.CLIENT)
@@ -79,5 +95,6 @@ public class BlockGrindstone extends Block {
         this.roundIcon = register.registerIcon("villagertradesbackport:grindstone_round");
         this.sideIcon = register.registerIcon("villagertradesbackport:grindstone_side");
         this.pivotIcon = register.registerIcon("villagertradesbackport:grindstone_pivot");
+        this.legIcon = register.registerIcon("villagertradesbackport:grindstone_leg");
     }
 }

@@ -65,9 +65,12 @@ public class VillagerTradeManager {
         return 5;
     }
 
+    public static final int UNEMPLOYED_PROFESSION_ID = 6;
+
     /**
-     * Checks if this villager is a vanilla / VillageNames villager that should use 1.14+ trades.
-     * Modded villagers (TiC, Thaumcraft, etc.) with profession >= 5 (unless VillageNames Nitwit) return false.
+     * Checks if a villager can have our customized leveling and trading system.
+     * Modded villagers (TiC, Thaumcraft, etc.) with profession >= 5 (unless VillageNames Nitwit or Unemployed) return
+     * false.
      */
     public static boolean isCustomizableVillager(EntityVillager villager) {
         int prof = villager.getProfession();
@@ -76,6 +79,9 @@ public class VillagerTradeManager {
         }
         if (prof == 5 && IS_VILLAGE_NAMES_LOADED) {
             // VillageNames Nitwit
+            return true;
+        }
+        if (prof == UNEMPLOYED_PROFESSION_ID) {
             return true;
         }
         return false;
@@ -105,6 +111,7 @@ public class VillagerTradeManager {
         if (prof == null) {
             villager.getEntityData()
                 .removeTag("VTB_ProfessionName");
+            villager.setProfession(UNEMPLOYED_PROFESSION_ID);
             if (IS_VILLAGE_NAMES_LOADED) {
                 try {
                     astrotibs.villagenames.ieep.ExtendedVillager ev = astrotibs.villagenames.ieep.ExtendedVillager

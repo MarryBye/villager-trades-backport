@@ -28,6 +28,9 @@ public abstract class MixinEntityVillager {
                     VillagerTradeManager.initVillagerTrades(villager);
                 } else {
                     acc.setBuyingList(new net.minecraft.village.MerchantRecipeList());
+                    if (prof == null) {
+                        VillagerTradeManager.setProfession(villager, null);
+                    }
                 }
             }
             ci.cancel();

@@ -23,13 +23,13 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class BlockLectern extends BlockContainer {
 
     @SideOnly(Side.CLIENT)
-    private IIcon topIcon;
+    public IIcon topIcon;
     @SideOnly(Side.CLIENT)
-    private IIcon sideIcon;
+    public IIcon sideIcon;
     @SideOnly(Side.CLIENT)
-    private IIcon frontIcon;
+    public IIcon frontIcon;
     @SideOnly(Side.CLIENT)
-    private IIcon baseIcon;
+    public IIcon baseIcon;
 
     public BlockLectern() {
         super(Material.wood);
@@ -54,6 +54,11 @@ public class BlockLectern extends BlockContainer {
     @Override
     public boolean renderAsNormalBlock() {
         return false;
+    }
+
+    @Override
+    public int getRenderType() {
+        return -1;
     }
 
     @Override
