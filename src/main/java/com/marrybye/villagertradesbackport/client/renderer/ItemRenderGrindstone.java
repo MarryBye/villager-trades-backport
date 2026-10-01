@@ -1,0 +1,47 @@
+package com.marrybye.villagertradesbackport.client.renderer;
+
+import net.minecraft.item.ItemStack;
+import net.minecraftforge.client.IItemRenderer;
+
+import org.lwjgl.opengl.GL11;
+
+public class ItemRenderGrindstone implements IItemRenderer {
+
+    private final TileEntityGrindstoneRenderer renderer;
+
+    public ItemRenderGrindstone(TileEntityGrindstoneRenderer renderer) {
+        this.renderer = renderer;
+    }
+
+    @Override
+    public boolean handleRenderType(ItemStack item, ItemRenderType type) {
+        return true;
+    }
+
+    @Override
+    public boolean shouldUseRenderHelper(ItemRenderType type, ItemStack item, ItemRendererHelper helper) {
+        return true;
+    }
+
+    @Override
+    public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
+        GL11.glPushMatrix();
+
+        if (type == ItemRenderType.EQUIPPED_FIRST_PERSON) {
+            GL11.glTranslatef(0.5F, 0.5F, 0.5F);
+            GL11.glScalef(0.8F, 0.8F, 0.8F);
+        } else if (type == ItemRenderType.EQUIPPED) {
+            GL11.glTranslatef(0.5F, 0.5F, 0.5F);
+            GL11.glScalef(0.7F, 0.7F, 0.7F);
+        } else if (type == ItemRenderType.INVENTORY) {
+            GL11.glTranslatef(0.0F, -0.1F, 0.0F);
+            GL11.glScalef(0.8F, 0.8F, 0.8F);
+        } else if (type == ItemRenderType.ENTITY) {
+            GL11.glScalef(0.5F, 0.5F, 0.5F);
+        }
+
+        renderer.renderGrindstone(null, 0.0D, 0.0D, 0.0D, 0);
+
+        GL11.glPopMatrix();
+    }
+}

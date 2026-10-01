@@ -14,8 +14,21 @@ public class VillageNamesCompat {
         if (IS_VILLAGE_NAMES_LOADED) {
             try {
                 astrotibs.villagenames.config.GeneralConfig.modernVillagerTrades = false;
+                registerUnemployedProfession();
             } catch (Throwable ignored) {}
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static void registerUnemployedProfession() {
+        if (!IS_VILLAGE_NAMES_LOADED) return;
+        try {
+            int unempId = com.marrybye.villagertradesbackport.trade.VillagerTradeManager.UNEMPLOYED_PROFESSION_ID;
+            if (!astrotibs.villagenames.config.GeneralConfig.professionID_a.contains(unempId)) {
+                astrotibs.villagenames.config.GeneralConfig.professionID_a.add(unempId);
+                astrotibs.villagenames.config.GeneralConfig.careerAsset_a.add("");
+            }
+        } catch (Throwable ignored) {}
     }
 
     public static int getVillagerLevel(IMerchant merchant, MerchantRecipeList trades) {
@@ -82,9 +95,17 @@ public class VillageNamesCompat {
             return;
         }
         try {
+            registerUnemployedProfession();
             astrotibs.villagenames.ieep.ExtendedVillager ev = astrotibs.villagenames.ieep.ExtendedVillager
                 .get(villager);
             if (ev == null) return;
+
+            if (ev.getBiomeType() == -1) {
+                ev.setBiomeType(astrotibs.villagenames.utility.FunctionsVN.returnBiomeTypeForEntityLocation(villager));
+            }
+            if (ev.getSkinTone() == -99) {
+                ev.setSkinTone(astrotibs.villagenames.utility.FunctionsVN.returnSkinToneForEntityLocation(villager));
+            }
 
             cpw.mods.fml.common.network.NetworkRegistry.TargetPoint targetPoint = new cpw.mods.fml.common.network.NetworkRegistry.TargetPoint(
                 villager.dimension,

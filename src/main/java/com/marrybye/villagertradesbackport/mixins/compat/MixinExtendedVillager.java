@@ -24,7 +24,12 @@ public abstract class MixinExtendedVillager {
 
     @Inject(method = "getProfession", at = @At("HEAD"), cancellable = true)
     public void onGetProfession(CallbackInfoReturnable<Integer> cir) {
-        if (this.villager != null && VillagerTradeManager.isCustomizableVillager(this.villager)) {
+        // Never override on client side: client values are synced accurately via MessageModernVillagerSkin
+        if (this.villager == null || this.villager.worldObj == null || this.villager.worldObj.isRemote) {
+            return;
+        }
+
+        if (VillagerTradeManager.isCustomizableVillager(this.villager)) {
             VillagerProfession prof = VillagerTradeManager.getProfession(this.villager);
             if (prof == null || this.career <= 0) {
                 cir.setReturnValue(VillagerTradeManager.UNEMPLOYED_PROFESSION_ID);
@@ -34,7 +39,11 @@ public abstract class MixinExtendedVillager {
 
     @Inject(method = "getCareer", at = @At("HEAD"), cancellable = true)
     public void onGetCareer(CallbackInfoReturnable<Integer> cir) {
-        if (this.villager != null && VillagerTradeManager.isCustomizableVillager(this.villager)) {
+        if (this.villager == null || this.villager.worldObj == null || this.villager.worldObj.isRemote) {
+            return;
+        }
+
+        if (VillagerTradeManager.isCustomizableVillager(this.villager)) {
             if (this.career <= 0) {
                 cir.setReturnValue(0);
             }
@@ -43,7 +52,11 @@ public abstract class MixinExtendedVillager {
 
     @Inject(method = "getProfessionLevel", at = @At("HEAD"), cancellable = true)
     public void onGetProfessionLevel(CallbackInfoReturnable<Integer> cir) {
-        if (this.villager != null && VillagerTradeManager.isCustomizableVillager(this.villager)) {
+        if (this.villager == null || this.villager.worldObj == null || this.villager.worldObj.isRemote) {
+            return;
+        }
+
+        if (VillagerTradeManager.isCustomizableVillager(this.villager)) {
             VillagerProfession prof = VillagerTradeManager.getProfession(this.villager);
             if (prof == null || this.career <= 0) {
                 cir.setReturnValue(0);
@@ -53,6 +66,10 @@ public abstract class MixinExtendedVillager {
 
     @Inject(method = "determineProfessionLevel", at = @At("HEAD"), cancellable = true)
     private static void onDetermineProfessionLevel(EntityVillager villager, CallbackInfoReturnable<Integer> cir) {
+        if (villager == null || villager.worldObj == null || villager.worldObj.isRemote) {
+            return;
+        }
+
         if (VillagerTradeManager.isCustomizableVillager(villager)) {
             VillagerProfession prof = VillagerTradeManager.getProfession(villager);
             if (prof == null) {

@@ -19,6 +19,7 @@ public class ModBlocks {
 
         grindstone = new BlockGrindstone();
         GameRegistry.registerBlock(grindstone, "grindstone");
+        GameRegistry.registerTileEntity(TileEntityGrindstone.class, "vtb_grindstone");
 
         // Crafting recipes (authentic Mojang recipes)
         GameRegistry.addRecipe(

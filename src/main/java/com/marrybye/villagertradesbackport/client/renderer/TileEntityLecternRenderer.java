@@ -37,8 +37,8 @@ public class TileEntityLecternRenderer extends TileEntitySpecialRenderer {
 
         // Rotation based on metadata: 2=North, 3=South, 4=West, 5=East
         float rotation = 0.0F;
-        if (meta == 2) rotation = 180.0F;
-        else if (meta == 3) rotation = 0.0F;
+        if (meta == 2) rotation = 0.0F;
+        else if (meta == 3) rotation = 180.0F;
         else if (meta == 4) rotation = 90.0F;
         else if (meta == 5) rotation = 270.0F;
         GL11.glRotatef(rotation, 0.0F, 1.0F, 0.0F);
@@ -73,6 +73,7 @@ public class TileEntityLecternRenderer extends TileEntitySpecialRenderer {
         tessellator.draw();
 
         // 2. Pillar: 8 x 12 x 8 (y: 2/16 to 14/16, x: -0.25 to 0.25, z: -0.25 to 0.25)
+        // Authentic Mojang 1.14: pillar sides are wood (#sides), not books!
         tessellator.startDrawingQuads();
         renderCuboid(
             tessellator,
@@ -84,8 +85,8 @@ public class TileEntityLecternRenderer extends TileEntitySpecialRenderer {
             0.25,
             bottomIcon,
             topIcon,
-            frontIcon,
-            frontIcon,
+            sideIcon,
+            sideIcon,
             sideIcon,
             sideIcon);
         tessellator.draw();
