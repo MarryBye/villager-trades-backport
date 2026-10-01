@@ -48,71 +48,52 @@ public class TileEntityLecternRenderer extends TileEntitySpecialRenderer {
         BlockLectern block = ModBlocks.lectern;
         IIcon baseIcon = (block != null && block.baseIcon != null) ? block.baseIcon : Blocks.planks.getIcon(0, 0);
         IIcon sideIcon = (block != null && block.sideIcon != null) ? block.sideIcon : Blocks.planks.getIcon(0, 0);
-        IIcon frontIcon = (block != null && block.frontIcon != null) ? block.frontIcon : Blocks.planks.getIcon(0, 0);
         IIcon topIcon = (block != null && block.topIcon != null) ? block.topIcon : Blocks.planks.getIcon(0, 0);
         IIcon bottomIcon = Blocks.planks.getIcon(0, 0);
 
-        Tessellator tessellator = Tessellator.instance;
+        Tessellator tess = Tessellator.instance;
 
         // 1. Base: 16 x 2 x 16 (y: 0.0 to 2/16)
-        tessellator.startDrawingQuads();
-        renderCuboid(
-            tessellator,
-            -0.5,
-            0.0,
-            -0.5,
-            0.5,
-            2.0 / 16.0,
-            0.5,
-            bottomIcon,
-            baseIcon,
-            baseIcon,
-            baseIcon,
-            baseIcon,
-            baseIcon);
-        tessellator.draw();
+        // Mojang lectern.json:
+        // down: [0, 0, 16, 16] planks
+        // up: [0, 0, 16, 16] base
+        // north: [0, 14, 16, 16] base
+        // south/east/west: [0, 6, 16, 8] base
+        tess.startDrawingQuads();
+        renderFaceDown(tess, -0.5, 0.0, -0.5, 0.5, 0.125, 0.5, bottomIcon, 0, 0, 16, 16);
+        renderFaceUp(tess, -0.5, 0.0, -0.5, 0.5, 0.125, 0.5, baseIcon, 0, 0, 16, 16);
+        renderFaceNorth(tess, -0.5, 0.0, -0.5, 0.5, 0.125, 0.5, baseIcon, 0, 14, 16, 16);
+        renderFaceSouth(tess, -0.5, 0.0, -0.5, 0.5, 0.125, 0.5, baseIcon, 0, 6, 16, 8);
+        renderFaceEast(tess, -0.5, 0.0, -0.5, 0.5, 0.125, 0.5, baseIcon, 0, 6, 16, 8);
+        renderFaceWest(tess, -0.5, 0.0, -0.5, 0.5, 0.125, 0.5, baseIcon, 0, 6, 16, 8);
+        tess.draw();
 
-        // 2. Pillar: 8 x 12 x 8 (y: 2/16 to 14/16, x: -0.25 to 0.25, z: -0.25 to 0.25)
-        // Authentic Mojang 1.14: pillar sides are wood (#sides), not books!
-        tessellator.startDrawingQuads();
-        renderCuboid(
-            tessellator,
-            -0.25,
-            2.0 / 16.0,
-            -0.25,
-            0.25,
-            14.0 / 16.0,
-            0.25,
-            bottomIcon,
-            topIcon,
-            sideIcon,
-            sideIcon,
-            sideIcon,
-            sideIcon);
-        tessellator.draw();
+        // 2. Pillar: [4, 2, 4] to [12, 15, 12] (8 x 13 x 8, y: 2/16 to 15/16)
+        // Using authentic 1:1 pixel wood mapping from sideIcon (8x13):
+        tess.startDrawingQuads();
+        renderFaceNorth(tess, -0.25, 0.125, -0.25, 0.25, 0.9375, 0.25, sideIcon, 4, 2, 12, 15);
+        renderFaceSouth(tess, -0.25, 0.125, -0.25, 0.25, 0.9375, 0.25, sideIcon, 4, 2, 12, 15);
+        renderFaceEast(tess, -0.25, 0.125, -0.25, 0.25, 0.9375, 0.25, sideIcon, 4, 2, 12, 15);
+        renderFaceWest(tess, -0.25, 0.125, -0.25, 0.25, 0.9375, 0.25, sideIcon, 4, 2, 12, 15);
+        tess.draw();
 
-        // 3. Slanted Desk: tilted around pivot (0.0, 12/16, 0.0) by -22.5 degrees
+        // 3. Slanted Desk: tilted around origin (0.0, 8/16, 0.0) by -22.5 degrees
+        // Mojang lectern.json:
+        // [0, 12, 3] to [16, 16, 16] with origin [8, 8, 8], angle -22.5 on x
         GL11.glPushMatrix();
-        GL11.glTranslatef(0.0F, 12.0F / 16.0F, 0.0F);
+        GL11.glTranslatef(0.0F, 0.5F, 0.0F);
         GL11.glRotatef(-22.5F, 1.0F, 0.0F, 0.0F);
-        GL11.glTranslatef(0.0F, -12.0F / 16.0F, 0.0F);
+        GL11.glTranslatef(0.0F, -0.5F, 0.0F);
 
-        tessellator.startDrawingQuads();
-        renderCuboid(
-            tessellator,
-            -0.5,
-            12.0 / 16.0,
-            -0.3125,
-            0.5,
-            16.0 / 16.0,
-            0.5,
-            bottomIcon,
-            topIcon,
-            sideIcon,
-            sideIcon,
-            sideIcon,
-            sideIcon);
-        tessellator.draw();
+        tess.startDrawingQuads();
+        // Desk cuboid: x: [-0.5, 0.5], y: [0.75, 1.0], z: [-0.3125, 0.5]
+        renderFaceUp(tess, -0.5, 0.75, -0.3125, 0.5, 1.0, 0.5, topIcon, 0, 1, 16, 14);
+        renderFaceDown(tess, -0.5, 0.75, -0.3125, 0.5, 1.0, 0.5, bottomIcon, 0, 0, 16, 13);
+        renderFaceNorth(tess, -0.5, 0.75, -0.3125, 0.5, 1.0, 0.5, sideIcon, 0, 0, 16, 4);
+        renderFaceSouth(tess, -0.5, 0.75, -0.3125, 0.5, 1.0, 0.5, sideIcon, 0, 4, 16, 8);
+        renderFaceEast(tess, -0.5, 0.75, -0.3125, 0.5, 1.0, 0.5, sideIcon, 0, 4, 13, 8);
+        renderFaceWest(tess, -0.5, 0.75, -0.3125, 0.5, 1.0, 0.5, sideIcon, 0, 4, 13, 8);
+        tess.draw();
 
         // 4. Book (if present)
         if (lectern != null && lectern.hasBook()) {
@@ -130,54 +111,87 @@ public class TileEntityLecternRenderer extends TileEntitySpecialRenderer {
         GL11.glPopMatrix(); // Lectern transform
     }
 
-    private void renderCuboid(Tessellator tess, double minX, double minY, double minZ, double maxX, double maxY,
-        double maxZ, IIcon iconDown, IIcon iconUp, IIcon iconNorth, IIcon iconSouth, IIcon iconWest, IIcon iconEast) {
-        // Down (Y-)
+    private void renderFaceDown(Tessellator tess, double minX, double minY, double minZ, double maxX, double maxY,
+        double maxZ, IIcon icon, double u1, double v1, double u2, double v2) {
         tess.setNormal(0.0F, -1.0F, 0.0F);
         tess.setColorOpaque_F(0.5F, 0.5F, 0.5F);
-        tess.addVertexWithUV(minX, minY, maxZ, iconDown.getMinU(), iconDown.getMaxV());
-        tess.addVertexWithUV(minX, minY, minZ, iconDown.getMinU(), iconDown.getMinV());
-        tess.addVertexWithUV(maxX, minY, minZ, iconDown.getMaxU(), iconDown.getMinV());
-        tess.addVertexWithUV(maxX, minY, maxZ, iconDown.getMaxU(), iconDown.getMaxV());
+        double minU = icon.getInterpolatedU(u1);
+        double maxU = icon.getInterpolatedU(u2);
+        double minV = icon.getInterpolatedV(v1);
+        double maxV = icon.getInterpolatedV(v2);
+        tess.addVertexWithUV(minX, minY, maxZ, minU, maxV);
+        tess.addVertexWithUV(minX, minY, minZ, minU, minV);
+        tess.addVertexWithUV(maxX, minY, minZ, maxU, minV);
+        tess.addVertexWithUV(maxX, minY, maxZ, maxU, maxV);
+    }
 
-        // Up (Y+)
+    private void renderFaceUp(Tessellator tess, double minX, double minY, double minZ, double maxX, double maxY,
+        double maxZ, IIcon icon, double u1, double v1, double u2, double v2) {
         tess.setNormal(0.0F, 1.0F, 0.0F);
         tess.setColorOpaque_F(1.0F, 1.0F, 1.0F);
-        tess.addVertexWithUV(minX, maxY, minZ, iconUp.getMinU(), iconUp.getMinV());
-        tess.addVertexWithUV(minX, maxY, maxZ, iconUp.getMinU(), iconUp.getMaxV());
-        tess.addVertexWithUV(maxX, maxY, maxZ, iconUp.getMaxU(), iconUp.getMaxV());
-        tess.addVertexWithUV(maxX, maxY, minZ, iconUp.getMaxU(), iconUp.getMinV());
+        double minU = icon.getInterpolatedU(u1);
+        double maxU = icon.getInterpolatedU(u2);
+        double minV = icon.getInterpolatedV(v1);
+        double maxV = icon.getInterpolatedV(v2);
+        tess.addVertexWithUV(minX, maxY, minZ, minU, minV);
+        tess.addVertexWithUV(minX, maxY, maxZ, minU, maxV);
+        tess.addVertexWithUV(maxX, maxY, maxZ, maxU, maxV);
+        tess.addVertexWithUV(maxX, maxY, minZ, maxU, minV);
+    }
 
-        // North (Z-)
+    private void renderFaceNorth(Tessellator tess, double minX, double minY, double minZ, double maxX, double maxY,
+        double maxZ, IIcon icon, double u1, double v1, double u2, double v2) {
         tess.setNormal(0.0F, 0.0F, -1.0F);
         tess.setColorOpaque_F(0.8F, 0.8F, 0.8F);
-        tess.addVertexWithUV(maxX, minY, minZ, iconNorth.getMinU(), iconNorth.getMaxV());
-        tess.addVertexWithUV(minX, minY, minZ, iconNorth.getMaxU(), iconNorth.getMaxV());
-        tess.addVertexWithUV(minX, maxY, minZ, iconNorth.getMaxU(), iconNorth.getMinV());
-        tess.addVertexWithUV(maxX, maxY, minZ, iconNorth.getMinU(), iconNorth.getMinV());
+        double minU = icon.getInterpolatedU(u1);
+        double maxU = icon.getInterpolatedU(u2);
+        double minV = icon.getInterpolatedV(v1);
+        double maxV = icon.getInterpolatedV(v2);
+        tess.addVertexWithUV(maxX, minY, minZ, minU, maxV);
+        tess.addVertexWithUV(minX, minY, minZ, maxU, maxV);
+        tess.addVertexWithUV(minX, maxY, minZ, maxU, minV);
+        tess.addVertexWithUV(maxX, maxY, minZ, minU, minV);
+    }
 
-        // South (Z+)
+    private void renderFaceSouth(Tessellator tess, double minX, double minY, double minZ, double maxX, double maxY,
+        double maxZ, IIcon icon, double u1, double v1, double u2, double v2) {
         tess.setNormal(0.0F, 0.0F, 1.0F);
         tess.setColorOpaque_F(0.8F, 0.8F, 0.8F);
-        tess.addVertexWithUV(minX, minY, maxZ, iconSouth.getMinU(), iconSouth.getMaxV());
-        tess.addVertexWithUV(maxX, minY, maxZ, iconSouth.getMaxU(), iconSouth.getMaxV());
-        tess.addVertexWithUV(maxX, maxY, maxZ, iconSouth.getMaxU(), iconSouth.getMinV());
-        tess.addVertexWithUV(minX, maxY, maxZ, iconSouth.getMinU(), iconSouth.getMinV());
+        double minU = icon.getInterpolatedU(u1);
+        double maxU = icon.getInterpolatedU(u2);
+        double minV = icon.getInterpolatedV(v1);
+        double maxV = icon.getInterpolatedV(v2);
+        tess.addVertexWithUV(minX, minY, maxZ, minU, maxV);
+        tess.addVertexWithUV(maxX, minY, maxZ, maxU, maxV);
+        tess.addVertexWithUV(maxX, maxY, maxZ, maxU, minV);
+        tess.addVertexWithUV(minX, maxY, maxZ, minU, minV);
+    }
 
-        // West (X-)
+    private void renderFaceWest(Tessellator tess, double minX, double minY, double minZ, double maxX, double maxY,
+        double maxZ, IIcon icon, double u1, double v1, double u2, double v2) {
         tess.setNormal(-1.0F, 0.0F, 0.0F);
         tess.setColorOpaque_F(0.6F, 0.6F, 0.6F);
-        tess.addVertexWithUV(minX, minY, minZ, iconWest.getMinU(), iconWest.getMaxV());
-        tess.addVertexWithUV(minX, minY, maxZ, iconWest.getMaxU(), iconWest.getMaxV());
-        tess.addVertexWithUV(minX, maxY, maxZ, iconWest.getMaxU(), iconWest.getMinV());
-        tess.addVertexWithUV(minX, maxY, minZ, iconWest.getMinU(), iconWest.getMinV());
+        double minU = icon.getInterpolatedU(u1);
+        double maxU = icon.getInterpolatedU(u2);
+        double minV = icon.getInterpolatedV(v1);
+        double maxV = icon.getInterpolatedV(v2);
+        tess.addVertexWithUV(minX, minY, minZ, minU, maxV);
+        tess.addVertexWithUV(minX, minY, maxZ, maxU, maxV);
+        tess.addVertexWithUV(minX, maxY, maxZ, maxU, minV);
+        tess.addVertexWithUV(minX, maxY, minZ, minU, minV);
+    }
 
-        // East (X+)
+    private void renderFaceEast(Tessellator tess, double minX, double minY, double minZ, double maxX, double maxY,
+        double maxZ, IIcon icon, double u1, double v1, double u2, double v2) {
         tess.setNormal(1.0F, 0.0F, 0.0F);
         tess.setColorOpaque_F(0.6F, 0.6F, 0.6F);
-        tess.addVertexWithUV(maxX, minY, maxZ, iconEast.getMinU(), iconEast.getMaxV());
-        tess.addVertexWithUV(maxX, minY, minZ, iconEast.getMaxU(), iconEast.getMaxV());
-        tess.addVertexWithUV(maxX, maxY, minZ, iconEast.getMaxU(), iconEast.getMinV());
-        tess.addVertexWithUV(maxX, maxY, maxZ, iconEast.getMinU(), iconEast.getMinV());
+        double minU = icon.getInterpolatedU(u1);
+        double maxU = icon.getInterpolatedU(u2);
+        double minV = icon.getInterpolatedV(v1);
+        double maxV = icon.getInterpolatedV(v2);
+        tess.addVertexWithUV(maxX, minY, maxZ, minU, maxV);
+        tess.addVertexWithUV(maxX, minY, minZ, maxU, maxV);
+        tess.addVertexWithUV(maxX, maxY, minZ, maxU, minV);
+        tess.addVertexWithUV(maxX, maxY, maxZ, minU, minV);
     }
 }

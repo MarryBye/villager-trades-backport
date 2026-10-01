@@ -112,6 +112,7 @@ public class VillagerTradeManager {
             villager.getEntityData()
                 .removeTag("VTB_ProfessionName");
             villager.setProfession(UNEMPLOYED_PROFESSION_ID);
+            ((AccessorEntityVillager) villager).setBuyingList(new MerchantRecipeList());
             if (IS_VILLAGE_NAMES_LOADED) {
                 try {
                     astrotibs.villagenames.ieep.ExtendedVillager ev = astrotibs.villagenames.ieep.ExtendedVillager

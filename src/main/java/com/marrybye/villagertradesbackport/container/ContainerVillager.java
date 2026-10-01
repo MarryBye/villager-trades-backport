@@ -309,6 +309,20 @@ public class ContainerVillager extends ContainerMerchant {
         }
     }
 
+    @Override
+    public boolean canInteractWith(EntityPlayer player) {
+        if (this.merchant instanceof EntityVillager) {
+            EntityVillager villager = (EntityVillager) this.merchant;
+            if (VillagerTradeManager.isCustomizableVillager(villager)) {
+                VillagerProfession prof = VillagerTradeManager.getProfession(villager);
+                if (prof == null || prof == VillagerProfession.NITWIT) {
+                    return false;
+                }
+            }
+        }
+        return this.merchant.getCustomer() == player;
+    }
+
     private static boolean areItemStacksEqual(ItemStack stack1, ItemStack stack2) {
         if (stack1 == null || stack2 == null) {
             return false;

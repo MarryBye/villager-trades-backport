@@ -43,6 +43,7 @@ public abstract class MixinEntityVillager {
         if (VillagerTradeManager.isCustomizableVillager(villager)) {
             VillagerProfession prof = VillagerTradeManager.getProfession(villager);
             if (prof == null || prof == VillagerProfession.NITWIT) {
+                ((AccessorEntityVillager) villager).setBuyingList(new net.minecraft.village.MerchantRecipeList());
                 villager.worldObj.playSoundAtEntity(villager, "mob.villager.no", 1.0F, 1.0F);
                 cir.setReturnValue(true);
             }

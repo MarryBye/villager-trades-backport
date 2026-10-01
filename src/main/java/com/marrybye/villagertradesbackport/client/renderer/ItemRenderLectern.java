@@ -33,13 +33,14 @@ public class ItemRenderLectern implements IItemRenderer {
             GL11.glTranslatef(0.5F, 0.5F, 0.5F);
             GL11.glScalef(0.7F, 0.7F, 0.7F);
         } else if (type == ItemRenderType.INVENTORY) {
-            GL11.glTranslatef(0.0F, -0.1F, 0.0F);
-            GL11.glScalef(0.8F, 0.8F, 0.8F);
+            GL11.glTranslatef(0.0F, -0.12F, 0.0F);
+            GL11.glScalef(0.95F, 0.95F, 0.95F);
         } else if (type == ItemRenderType.ENTITY) {
             GL11.glTranslatef(0.0F, -0.2F, 0.0F);
             GL11.glScalef(0.6F, 0.6F, 0.6F);
         }
-        renderer.renderLectern(null, -0.5, -0.5, -0.5, 2);
+        // meta = 3: slanted reading surface faces front towards player
+        renderer.renderLectern(null, -0.5, -0.5, -0.5, 3);
         GL11.glPopMatrix();
     }
 }
